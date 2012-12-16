@@ -88,6 +88,9 @@ def unconcurrent_test():
     # send some changes
     ext_server.apply_local_change(
         jup.Operation(jup.OP_INSERT, 1, "d", ext_server.precedence))
+    ext_server.apply_local_change(
+        jup.Operation(jup.OP_INSERT, 2, "e", ext_server.precedence))
+
     main_server.apply_local_change(
         jup.Operation(jup.OP_INSERT, 0, "c", main_server.precedence)) 
     main_server.apply_local_change(

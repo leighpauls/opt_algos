@@ -128,7 +128,7 @@ class Server(Printable):
                 if replay_op.pos < new_op.pos:
                     new_op.pos += 1
                 elif replay_op.pos == new_op.pos \
-                        and replay_op.precendece > new_op.precedence:
+                        and replay_op.precedence > new_op.precedence:
                     new_op.pos += 1
                     
             elif replay_op.op_type == OP_REMOVE:
