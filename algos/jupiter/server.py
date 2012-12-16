@@ -4,34 +4,48 @@ from containers import *
 from state import State
 from remote import Remote
 
+from copy import copy
+
 class RemoteInitializer(Printable):
+    """Serializable class used to initialize a new remote"""
     def __init__(self, server):
-        self.value = server.value
+        self.value = list(server.value)
         self.age = server.state.age
 
 class Server(Printable):
+    """Represents a node in the OPT network.
+    Attributes:
+    value -- a local copy of the document being made
+    state -- a state-space State of the remotes I know about
+    remotes -- a map of key to Remote objects of the remotes I know about
+    hist -- a list of the Hist history objects that I know about
+    precedence --  a number which is unique to this node for resolving order-ambiguities
+    """
+    
     def __init__(self, origin_remote=None, remote_init=None):
+        self.remotes = {}
         if origin_remote == None or remote_init == None:
             self.value = []
             self.state = State()
-            self.remotes = {}
         else:
-            self.value = remote_init.value.copy()
-            self.state = State(age)
-            remote_key = self.state.add_remote()
-            self.remotes = { remote_key: origin_remote }
+            self.value = list(remote_init.value)
+            self.state = State(remote_init.age)
+            self.add_remote(origin_remote)
 
         self.hist = []
         self.precedence = random.randint(0, 1 << 30)
         
     def add_remote(self, remote):
+        """Add a new remote interface which will have new changes sent at it
+        Attributes:
+        remote -- Remote object to add
+        """
         remote_key = self.state.add_remote()
         self.remotes[remote_key] = remote
 
         def apply_change_cb(remote_change):
-            self.apply_remote_change(remote_key, remote_change)
+            self._apply_remote_change(remote_key, remote_change)
         remote.set_remote_change_handler(apply_change_cb)
-        remote.init_remote_cb(RemoteInitializer(self))
 
     def _apply_change(self, op):
         if op.op_type == OP_INSERT:
@@ -50,6 +64,10 @@ class Server(Printable):
                 relative_source_state[0], relative_source_state[1], op))
 
     def apply_local_change(self, op):
+        """Make a change to the document on this node, and send out the changes.
+        Attributes:
+        op -- Operation to apply
+        """
         self.hist.append(Hist(self.state.get_snapshot(), op, self.state.age))
         self._apply_change(op)
 
@@ -60,23 +78,33 @@ class Server(Printable):
         self.state.apply_local_change()
     
 
-    def apply_remote_change(self, source_remote_key, remote_change):
-        transformed_op = self.transform_change(source_remote_key, remote_change)
+    def _apply_remote_change(self, source_remote_key, remote_change):
+        transformed_op = self._transform_change(source_remote_key, remote_change)
         self.hist.append(Hist(self.state.get_snapshot(),
                               transformed_op,
                               self.state.age))
         
         self._apply_change(transformed_op)
 
-        for remote_key, remote in self.remotes:
+        for remote_key, remote in self.remotes.items():
             if remote_key == source_remote_key:
-                remote.ack_remote_change_cb()
+                remote.send_remote_change_ack()
             else:
                 self._send_change_to_remote(remote_key, transformed_op)
 
         self.state.apply_remote_change(source_remote_key)
 
-    def transform_change(remote_key, change):
+    def _transform_change(self, remote_key, change):
+        """Transform the change so that it can be applied on the local state.
+        
+        Attributes:
+        remote_key -- key of the remote that made the change
+        change -- Change object, from the perspective of that remote
+        
+        Returns:
+        A Change object which is valid to apply on this server to bring self into
+        the remote-dimention axis after the given change
+        """
         cur_server, cur_remote = self.state.get_relative_to_remote(remote_key)
         if cur_server == change.server_src_state \
                 and cur_remote == change.remote_src_state:
@@ -85,7 +113,7 @@ class Server(Printable):
 
         # find the changes that have happened since the change's state
         replay_ops = []
-        for i in range(len(hist) - 1, 0, -1):
+        for i in range(len(self.hist) - 1, 0, -1):
             entry = self.hist[i]
             replay_ops.append(entry.op)
             if entry.src_state[remote_key] == change.remote_src_state \
@@ -94,7 +122,7 @@ class Server(Printable):
                 break
 
         # replay the changes
-        new_op = remote_change.op.copy()
+        new_op = copy(change.op)
         for replay_op in replay_ops:
             if replay_op.op_type == OP_INSERT:
                 if replay_op.pos < new_op.pos:
