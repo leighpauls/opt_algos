@@ -22,7 +22,11 @@ class Server(Printable):
     precedence --  a number which is unique to this node for resolving order-ambiguities
     """
     
-    def __init__(self, origin_remote=None, remote_init=None):
+    def __init__(self,
+                 origin_remote=None, 
+                 remote_init=None, 
+                 precedence=None,
+                 name="NoName"):
         self.remotes = {}
         if origin_remote == None or remote_init == None:
             self.value = []
@@ -30,17 +34,19 @@ class Server(Printable):
         else:
             self.value = list(remote_init.value)
             self.state = State(remote_init.age)
-            self.add_remote(origin_remote)
+            self.add_remote(origin_remote, remote_init.age)
 
         self.hist = []
-        self.precedence = random.randint(0, 1 << 30)
+        self.precedence = precedence if precedence is not None \
+            else random.randint(0, 1 << 30)
+        self.name = name
         
-    def add_remote(self, remote):
+    def add_remote(self, remote, age=0):
         """Add a new remote interface which will have new changes sent at it
         Attributes:
         remote -- Remote object to add
         """
-        remote_key = self.state.add_remote()
+        remote_key = self.state.add_remote(age)
         self.remotes[remote_key] = remote
 
         def apply_change_cb(remote_change):
@@ -56,12 +62,15 @@ class Server(Printable):
             None
         else:
             raise "Invalid operation: " + op.op
+        print self.name, self.value, "\n", op, "\n--\n"
 
     def _send_change_to_remote(self, remote_key, op):
         remote = self.remotes[remote_key]
         relative_source_state = self.state.get_relative_to_remote(remote_key)
         remote.enqueue_local_change(Change(
-                relative_source_state[0], relative_source_state[1], op))
+                server_src_state=relative_source_state[0], 
+                remote_src_state=relative_source_state[1], 
+                op=op))
 
     def apply_local_change(self, op):
         """Make a change to the document on this node, and send out the changes.
@@ -113,27 +122,37 @@ class Server(Printable):
 
         # find the changes that have happened since the change's state
         replay_ops = []
-        for i in range(len(self.hist) - 1, 0, -1):
+        for i in range(len(self.hist) - 1, -1, -1):
+            print i
             entry = self.hist[i]
-            replay_ops.append(entry.op)
-            if entry.src_state[remote_key] == change.remote_src_state \
-                    and entry.age - entry.src_state[remote_key] == \
-                    change.server_src_state:
+            entry_remote_src = entry.src_state[remote_key] if \
+                remote_key in entry.src_state \
+                else None
+
+            if (entry_remote_src is None) or \
+                    (entry_remote_src == change.server_src_state \
+                         and entry.age - entry_remote_src < change.remote_src_state):
+                print "break on", entry
                 break
+            print "push", entry.op
+            replay_ops.insert(0, entry.op)
 
         # replay the changes
+        print self.name, "over", len(replay_ops), "xform", change
         new_op = copy(change.op)
         for replay_op in replay_ops:
             if replay_op.op_type == OP_INSERT:
-                if replay_op.pos < new_op.pos:
+                if new_op.precedence is not replay_op.precedence \
+                        and (change.op.pos > replay_op.pos or (change.op.pos == replay_op.pos and new_op.precedence < replay_op.precedence)):
                     new_op.pos += 1
-                elif replay_op.pos == new_op.pos \
-                        and replay_op.precedence > new_op.precedence:
-                    new_op.pos += 1
+                    print self.name, "replay", replay_op
+                else:
+                    print self.name, "skip", replay_op
                     
             elif replay_op.op_type == OP_REMOVE:
                 if replay_op.pos < new_op.pos:
                     new_op.pos -= 1
+                    movement -= 1
                 elif new_op.op_type == OP_REMOVE and replay_op.pos == new_op.pos:
                     new_op.op_type = OP_NOOP
                     break

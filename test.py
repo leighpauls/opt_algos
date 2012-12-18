@@ -35,16 +35,16 @@ class AsyncBuffer:
 
     def make_change_sender(self, other_remote):
         def _change_sender(change):
-            print "Change being sent:", change
+            # print "Change being sent:", change
             def _send_change():
-                print "Change being executed:", change
+                # print "Change being executed:", change
                 other_remote.handle_remote_change(change)
             self.events.append(_send_change)
         return _change_sender
 
     def make_ack_sender(self, other_remote):
         def _ack_sender():
-            print "Ack being sent"
+            # print "Ack being sent"
             def _send_ack():
                 other_remote.handle_remote_ack()
             self.events.append(_send_ack)
@@ -55,9 +55,9 @@ class AsyncBuffer:
             event()
         events = []
 
-def unconcurrent_test():
+def bad_concurrent_test():
     # make the main server first, and give it some value
-    main_server = jup.Server()
+    main_server = jup.Server(precedence=3, name="main")
     main_server.apply_local_change(
         jup.Operation(jup.OP_INSERT, 0, "a", main_server.precedence))
 
@@ -70,7 +70,10 @@ def unconcurrent_test():
     main_server.add_remote(main_to_ext_remote)
 
     # make the external server
-    ext_server = jup.Server(ext_to_main_remote, ext_initer)
+    ext_server = jup.Server(origin_remote=ext_to_main_remote,
+                            remote_init=ext_initer,
+                            precedence=2,
+                            name="ext")
 
     # tie the remotes together
     buf = AsyncBuffer()
@@ -102,4 +105,4 @@ def unconcurrent_test():
     print ext_server.value
 
 if __name__ == "__main__":
-    unconcurrent_test()
+    concurrent_test()

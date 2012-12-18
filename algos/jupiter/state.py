@@ -19,9 +19,9 @@ class State(Printable):
         self.val = { State._INTERNAL_KEY: 0 }
         self.next_key = State._INTERNAL_KEY + 1
         self.age = age
-    def add_remote(self):
+    def add_remote(self, age=0):
         res = self.next_key
-        self.val[res] = 0
+        self.val[res] = age
         self.next_key += 1
         return res
     def apply_local_change(self):
