@@ -1,4 +1,4 @@
-from node import Node
+from client_node import ClientNode
 import copy
 from printable import Printable
 
@@ -12,7 +12,7 @@ class Operation(Printable):
     op -- The operation this will do, (NO_OP, INSERT, DELETE)
     pos -- The enumerated positon to apply the operation at
     val -- the value to use if it's an INSERT operation
-    end -- The Node type at the end of this edge
+    end -- The ClientNode type at the end of this edge
     prec -- The precedence of the client that made the operation
     """
     def __init__(self, operation, position, value, end_node, precedence):
@@ -27,7 +27,7 @@ def from_server_change(change, source_node):
     return Operation(operation=change.op,
                      position=change.pos,
                      value=change.val,
-                     end_node=Node(server_state=source_node.server_state + 1,
+                     end_node=ClientNode(server_state=source_node.server_state + 1,
                                    local_state=source_node.local_state),
                      precedence=change.prec)
 
@@ -37,7 +37,7 @@ def transform(transform_op, over_op, end_node):
     Params:
     transform_op -- the Operation to find the equivilent of
     over_op -- the Operation to compute the transoform over
-    end_node -- the Node the result should be pointing to
+    end_node -- the ClientNode the result should be pointing to
     Returns:
     A new Operation pointing at end_node
     """

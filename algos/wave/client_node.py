@@ -1,7 +1,7 @@
 import operation
 from printable import Printable
 
-class Node(Printable):
+class ClientNode(Printable):
     """One state in the history graph
     Attributes:
     server_state -- The server's independant state (# applied changes) relative to this client at this node
@@ -30,7 +30,7 @@ class Node(Printable):
         Params:
         local_state -- state value (counter) of the client to find
         server_satte -- state value (counter) of the server to find
-        root -- A Node gaurenteed to be above both this node and the
+        root -- A ClientNode gaurenteed to be above both this node and the
         node I'm tying to find
         Returns:
         The found node
@@ -97,7 +97,7 @@ class Node(Printable):
             if cur_node.local_op.end.server_op is not None:
                 end_node = cur_node.local_op.end.server_op.end
             else:
-                end_node = Node(local_state=cur_node.local_state + 1,
+                end_node = ClientNode(local_state=cur_node.local_state + 1,
                                 server_state=cur_node.server_state + 1)
 
             new_op = operation.transform(tranform_op=cur_node.local_op,
@@ -110,7 +110,7 @@ class Node(Printable):
         """Transform until the node one more server_state than the source node exists
         Should be executed from the root node
         Params:
-        source_node -- The Node that the resulting server op should be applied to
+        source_node -- The ClientNode that the resulting server op should be applied to
         """
         # find a node with the same server state as the source
         cur_node = self
@@ -132,7 +132,7 @@ class Node(Printable):
             if cur_node.server_op.end.local_op is not None:
                 end_node = cur_node.server_op.end.local_op.end
             else:
-                end_node = Node(local_state=cur_node.local_state + 1,
+                end_node = ClientNode(local_state=cur_node.local_state + 1,
                                 server_state=cur_node.server_state + 1)
             
             new_op = operation.transform(transform_op=cur_node.server_op,

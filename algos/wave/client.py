@@ -1,6 +1,6 @@
 from operation import Operation
 import operation
-from node import Node
+from client_node import ClientNode
 from change import Change
 
 from printable import Printable
@@ -9,15 +9,15 @@ class Client(Printable):
     """The main state representation of a client within the OPT system
     Attributes:
     value -- the active value of the tip of this client
-    tip -- the Node at the tip of this Client
+    tip -- the ClientNode at the tip of this Client
     root -- the oldest historical node that the server could send changes relative to
     send_change_cb -- function to call when I want to send a change to the server, accepts a Change object
-    local_change_q -- list of Node object's whose local branch should be sent to the server
+    local_change_q -- list of ClientNode object's whose local branch should be sent to the server
     pending_ack -- True iff I'm waitin for the server to ack my last local change before sending the next
     """
     def __init__(self, initial_value, server_state, send_change_cb, precedence):
         self.value = initial_value
-        self.tip = self.root = Node(server_state, 0)
+        self.tip = self.root = ClientNode(server_state, 0)
         self.send_change_cb = send_change_cb
         self.local_change_q = []
         self.pending_ack = False
@@ -30,7 +30,7 @@ class Client(Printable):
         postion -- enumerable position to apply it at
         value -- value to apply for an INSERT operation
         """
-        new_tip = Node(self.tip.server_state, self.tip.local_state + 1)
+        new_tip = ClientNode(self.tip.server_state, self.tip.local_state + 1)
         new_edge = Operation(operation, position, value, new_tip, self.prec)
 
         old_tip = self.tip
