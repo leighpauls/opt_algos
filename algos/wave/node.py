@@ -30,7 +30,10 @@ class Node(Printable):
         Params:
         local_state -- state value (counter) of the client to find
         server_satte -- state value (counter) of the server to find
-        root -- A Node gaurenteed to be above both this node and the node I'm tying to find
+        root -- A Node gaurenteed to be above both this node and the
+        node I'm tying to find
+        Returns:
+        The found node
         """
         if local_state < self.local_state:
             raise "Tried to find a local state older than myself"
@@ -55,12 +58,15 @@ class Node(Printable):
         return res
 
     def _transform_to_server(self, root):
-        raise "NotImpl"
+        if self.server_op is not None:
+            raise "Tried to transform over an existing server operation"
+        root._execute_server_transformations_to_node(self)
+        return self.server_op
 
     def _transform_to_local(self, root):
         """Transform to the local node and return it"""
         if self.local_op is not None:
-            raise "Tried to transform over a existant local node"
+            raise "Tried to transform over an existing local operation"
         root._execute_local_transformations_to_node(self)
         return self.local_op
 
@@ -68,7 +74,8 @@ class Node(Printable):
         """Transform until the node one more local than source node has been made
         Should be executed from the root node
         Params:
-        source_node -- The node that the resulting op should applied to"""
+        source_node -- The node that the resulting local op should applied to
+        """
         # find an existing node with the same local state as the source
         cur_node = self
         while cur_node.local_state != source_node.local_state:
@@ -93,8 +100,43 @@ class Node(Printable):
                 end_node = Node(local_state=cur_node.local_state + 1,
                                 server_state=cur_node.server_state + 1)
 
-            new_op = operation.Operation.transform(tranform_op=cur_node.local_op,
+            new_op = operation.transform(tranform_op=cur_node.local_op,
                                          over_op=cur_node.server_op,
                                          end_node=end_node)
-            cur_node.server_op.end.local_op = new_op
+            cur_node.server_op.end.set_local_op(new_op)
             cur_node = cur_node.server_op.end
+
+    def _execute_server_transformations_to_node(self, source_node):
+        """Transform until the node one more server_state than the source node exists
+        Should be executed from the root node
+        Params:
+        source_node -- The Node that the resulting server op should be applied to
+        """
+        # find a node with the same server state as the source
+        cur_node = self
+        while cur_node.server_state != source_node.server_state:
+            if cur_node.server_op is not None:
+                cur_node = cur_node.server_op.end
+            elif cur_node.local_op is not None:
+                cur_node = cur_node.local_op.end
+            else:
+                raise "Got to a dead end looking for a transformation seed"
+        # look for the last node with this server state to have a server op
+        while cur_node.local_op is not None \
+                and cur_node.local_op.end.server_op is not None:
+            cur_node = cur_node.local_op.end
+        # transform over local operations until we've transformed
+        # on to the source node
+        while cur_node is not source_node:
+            # make a blank node it it dosn't already exist
+            if cur_node.server_op.end.local_op is not None:
+                end_node = cur_node.server_op.end.local_op.end
+            else:
+                end_node = Node(local_state=cur_node.local_state + 1,
+                                server_state=cur_node.server_state + 1)
+            
+            new_op = operation.transform(transform_op=cur_node.server_op,
+                                         over_op=cur_node.local_op,
+                                         end_node=end_node)
+            cur_node.local_op.end.set_server_op(new_op)
+            cur_node = cur_node.local_op.end

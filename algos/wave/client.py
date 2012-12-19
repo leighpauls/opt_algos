@@ -1,4 +1,5 @@
 from operation import Operation
+import operation
 from node import Node
 from change import Change
 
@@ -33,7 +34,7 @@ class Client(Printable):
         new_edge = Operation(operation, position, value, new_tip, self.prec)
 
         old_tip = self.tip
-        self.tip = self.tip.set_local_op(new_edge)
+        self.tip = old_tip.set_local_op(new_edge)
         self._apply_operation(new_edge)
         self._enqueue_local_change(old_tip)
         
@@ -43,7 +44,27 @@ class Client(Printable):
         Params:
         change -- The inbound Change object
         """
-        raise "notimpl"
+        # transform the change to the tip
+        transform_source_node = self.root.transform_to_find(
+            local_state=change.src_client_state,
+            server_state=change.src_rel_server_state,
+            root=self.root)
+
+        raw_operation = operation.from_server_change(
+            change=change,
+            source_node=transform_source_node)
+
+        transform_source_node.set_server_op(raw_operation)
+
+        # tranform down to the tip + 1 server change
+        old_tip = self.tip
+        self.tip = transform_source_node.transform_to_find(
+            local_state=old_tip.local_state,
+            server_state=transform_source_node.server_state + 1,
+            root=self.root)
+
+        self._apply_operation(old_tip.server_op)
+        # no need to enqueue a remote change
     
     def apply_server_ack(self, ack):
         """Move the root so to forget about unneeded history objects
@@ -54,14 +75,17 @@ class Client(Printable):
             raise "Got an ack while not pending on one"
         self.pending_ack = False
 
-        # transform all pending changes to align on the client axis of the new server state
+        # transform all pending changes to align on the
+        # client axis of the new server state
         new_root = self.root.transform_to_find(local_state=ack.client_state,
-                                               server_state=ack.rel_server_state)
+                                               server_state=ack.rel_server_state,
+                                               root=self.root)
         for i in range(0, len(self.local_change_q)):
             cur_node = self.local_change_q[i]
             self.local_change_q[i] = cur_node.transform_to_find(
                 local_state=cur_node.local_state,
-                server_state=new_root.server_state)
+                server_state=new_root.server_state,
+                root=self.root)
 
         self.root = new_root
         self._try_send_local_change()
@@ -82,6 +106,7 @@ class Client(Printable):
         if self.pending_ack or len(self.local_change_q) == 0:
             # can't send anything yet
             return
+        self.pending_ack = True
         # I can assume at this point that the source node is the root history node
         source_node = self.local_change_q.pop(0)
         if source_node is not self.root:
@@ -93,5 +118,6 @@ class Client(Printable):
                         src_rel_server_state = source_node.server_state,
                         op = oper.op,
                         pos = oper.pos,
-                        val = oper.val)
+                        val = oper.val,
+                        precedence = self.prec)
         self.send_change_cb(change)

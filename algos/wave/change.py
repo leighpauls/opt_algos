@@ -8,11 +8,17 @@ class Change(Printable):
     op -- The operation identifier
     pos -- position to apply the operation
     val -- value for an INSERT operation
+    prec -- the precedence of the server that made the change
     """
-    def __init__(self, src_client_state, src_rel_server_state, op, pos, val):
+    def __init__(self,
+                 src_client_state,
+                 src_rel_server_state,
+                 op, pos, val,
+                 precedence):
         self.src_client_state = src_client_state
         self.src_rel_server_state = src_rel_server_state
         self.op = op
         self.pos = pos
         self.val = val
+        self.prec = precedence
         
