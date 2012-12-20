@@ -50,7 +50,10 @@ def transform(transform_op, over_op, end_node):
                 or (over_op.pos == res.pos and over_op.prec > res.prec):
             res.pos += 1
     elif over_op.op == Operation.DELETE:
-        raise "notimpl"
+        if over_op.pos < res.pos:
+            res.pos -= 1
+        elif over_op.pos == res.pos and res.op == Operation.DELETE:
+            res.op = NO_OP
     elif over_op.op == Operation.NO_OP:
         None
     else:

@@ -94,7 +94,7 @@ class Client(Printable):
         if operation.op == Operation.INSERT:
             self.value.insert(operation.pos, operation.val)
         elif operation.op == Operation.DELETE:
-            raise "notimpl"    
+            self.value.pop(operation.pos)
         elif operation.op == Operation.NO_OP:
             None
 
