@@ -1,5 +1,5 @@
-import operation
-from printable import Printable
+from .. import Operation
+from .. import Printable
 
 class ClientNode(Printable):
     """One state in the history graph
@@ -135,7 +135,7 @@ class ClientNode(Printable):
                 end_node = ClientNode(local_state=cur_node.local_state + 1,
                                 server_state=cur_node.server_state + 1)
             
-            new_op = operation.transform(transform_op=cur_node.server_op,
+            new_op = Operation.transform(transform_op=cur_node.server_op,
                                          over_op=cur_node.local_op,
                                          end_node=end_node)
             cur_node.local_op.end.set_server_op(new_op)

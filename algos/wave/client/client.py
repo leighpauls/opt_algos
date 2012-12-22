@@ -1,9 +1,5 @@
-from operation import Operation
-import operation
+from .. import Operation, Change, Printable
 from client_node import ClientNode
-from change import Change
-
-from printable import Printable
 
 class Client(Printable):
     """The main state representation of a client within the OPT system
@@ -50,7 +46,7 @@ class Client(Printable):
             server_state=change.src_rel_server_state,
             root=self.root)
 
-        raw_operation = operation.from_server_change(
+        raw_operation = Operation.from_server_change(
             change=change,
             source_node=transform_source_node)
 

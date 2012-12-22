@@ -1,4 +1,5 @@
 import algos.wave as wave
+import algos.wave.client
 
 def make_printer(prefix):
     def _printer(a):
@@ -6,7 +7,7 @@ def make_printer(prefix):
     return _printer
 
 def simple_client_test():
-    client = wave.Client([], 0, make_printer("Client Sending"), 1)
+    client = wave.client.Client([], 0, make_printer("Client Sending"), 1)
     
     client.apply_local_change(wave.Operation.INSERT, 0, "a")
     client.apply_local_change(wave.Operation.INSERT, 1, "b")
