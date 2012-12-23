@@ -1,5 +1,6 @@
 import algos.wave as wave
 import algos.wave.client
+import algos.wave.server
 
 def make_printer(prefix):
     def _printer(a):
@@ -7,22 +8,26 @@ def make_printer(prefix):
     return _printer
 
 def simple_client_test():
-    client = wave.client.Client([], 0, make_printer("Client Sending"), 1)
+    server = wave.server.Server(['z'])
+    client = None
+    
+    def handle_server_change(change):
+        client.apply_server_change(change)
+    def handle_ack(ack):
+        client.apply_server_ack(ack)
+
+    remote = server.add_new_remote(
+        handle_server_change=handle_server_change,
+        handle_ack_available=handle_ack)
+
+    def handle_client_change(change):
+        remote.client_change_available(change)
+
+    init_object = remote.get_initializer()
+    client = wave.client.Client(handle_client_change, init_object)
     
     client.apply_local_change(wave.Operation.INSERT, 0, "a")
     client.apply_local_change(wave.Operation.INSERT, 1, "b")
-    client.apply_server_ack(wave.Ack(1, 0))
-    client.apply_server_change(wave.Change(
-            src_client_state=1,
-            src_rel_server_state=0,
-            op=wave.Operation.INSERT, pos=1, val="c",
-            precedence=2))
-    client.apply_server_ack(wave.Ack(2, 1))
-    client.apply_server_change(wave.Change(
-            src_client_state=2,
-            src_rel_server_state=1,
-            op=wave.Operation.DELETE, pos=2, val=None,
-            precedence=2))
 
     print client
 

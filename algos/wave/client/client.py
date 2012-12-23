@@ -11,13 +11,19 @@ class Client(Printable):
     local_change_q -- list of ClientNode object's whose local branch should be sent to the server
     pending_ack -- True iff I'm waitin for the server to ack my last local change before sending the next
     """
-    def __init__(self, initial_value, server_state, send_change_cb, precedence):
-        self.value = initial_value
-        self.tip = self.root = ClientNode(server_state, 0)
+    def __init__(self, send_change_cb, init):
+        """
+        Params:
+        send_change_cb -- The handler for local changes (Change) -> None
+        init -- Initializer object sent from the Server
+        """
+        self.value = init.initial_value
+        self.tip = self.root = ClientNode(server_state=init.initial_state,
+                                          local_state=0)
         self.send_change_cb = send_change_cb
         self.local_change_q = []
         self.pending_ack = False
-        self.prec = precedence
+        self.prec = init.precedence
 
     def apply_local_change(self, operation, position, value):
         """Apply the change to the local value and enqueue it to send to the server
@@ -33,7 +39,6 @@ class Client(Printable):
         self.tip = old_tip.set_local_op(new_edge)
         self._apply_operation(new_edge)
         self._enqueue_local_change(old_tip)
-        
 
     def apply_server_change(self, change):
         """Resolve the server change down to the tip and apply it to the local value
@@ -93,6 +98,8 @@ class Client(Printable):
             self.value.pop(operation.pos)
         elif operation.op == Operation.NO_OP:
             None
+        else:
+            raise "Unknwown operation: " + operation.op
 
     def _enqueue_local_change(self, source_node):
         self.local_change_q.append(source_node)

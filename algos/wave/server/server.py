@@ -1,6 +1,8 @@
+from .. import Printable, Initializer, Operation
+from server_node import ServerNode
+from remote import Remote
 
-
-from printable import Printable
+import copy
 
 class Server(Printable):
     """The main state representation of the Central OPt server
@@ -12,19 +14,25 @@ class Server(Printable):
     value -- the current value of the tip entry
     """
     SERVER_HIDDEN_ID=1
-    def __init__(self, initial_state=None, initial_value=None):
+    def __init__(self, initial_value=None):
         self.next_remote_id = Server.SERVER_HIDDEN_ID + 1
+        self.next_precedence = 1
         self.remotes = {}
         self.root = self.tip = ServerNode()
         self.root.append_state_axis(Server.SERVER_HIDDEN_ID)
-        if initial_value is not None:
-            self.root.increment_state(
-                Server.SERVER_HIDDEN_ID,
-                initial_state)
-            self.value = initial_value
-        else:
-            self.value = []
+        self.value = copy.copy(initial_value) if initial_value is not None else []
         
+    def _apply_operation(self, operation):
+        if operation.op == Operation.INSERT:
+            self.value.insert(operation.pos, operation.val)
+        elif operation.op == Operation.DELETE:
+            self.value.pop(operation.pos)
+        elif operation.op == Operation.NO_OP:
+            None
+        else:
+            raise "Unknwown operation: " + operation.op
+
+
     def _apply_change(self, change, remote_id):
         """Apply the change provided to the server state,
         then tell all of the remotes about it
@@ -34,7 +42,7 @@ class Server(Printable):
         """
         # find the source state of the change
         source_node = self.root.find_source_of(change, remote_id)
-        source_operation = operation.from_remote_change(change, source_node)
+        source_operation = Operation.from_remote_change(change)
 
         # transform down to the tip
         new_tip_operation = source_node.transform_to_tip(source_operation, remote_id)
@@ -69,12 +77,16 @@ class Server(Printable):
 
         self.tip.append_state_axis(new_remote_id)
 
-        new_remote = Remote(on_new_remote_change=on_remote_data,
-                            on_new_server_change=handle_server_change,
-                            on_ack_available=handle_ack_available,
-                            Initializer(remote_id=new_remote_id,
-                                        precedence=new_precedence,
-                                        initial_value=self.value,
-                                        initial_state=self._get_relative_state(new_remote_id)))
+        initer = Initializer(
+            remote_id=new_remote_id,
+            precedence=new_precedence,
+            initial_value=copy.copy(self.value),
+            initial_state=self.tip.get_rel_server_state(new_remote_id))
+
+        new_remote = Remote(
+            on_new_remote_change=on_remote_data,
+            on_new_server_change=handle_server_change,
+            on_ack_available=handle_ack_available,
+            initializer=initer)
         self.remotes[new_remote_id] = new_remote
         return new_remote

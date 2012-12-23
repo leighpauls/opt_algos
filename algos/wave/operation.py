@@ -22,9 +22,18 @@ class Operation(Printable):
         self.prec = precedence
 
     @staticmethod
+    def from_remote_change(change):
+        """Creates a new operation with a None end node"""
+        return Operation(operation=change.op,
+                         position=change.pos,
+                         value=change.val,
+                         end_node=None,
+                         precedence=change.prec)
+
+    @staticmethod
     def from_server_change(change, source_node):
+        """Creates a new operation with a blank end node accoring to a sever's Change""" 
         from client import ClientNode
-        """Creates a new operation with a bank node accoring to a sever's Change""" 
         return Operation(operation=change.op,
                          position=change.pos,
                          value=change.val,
@@ -45,7 +54,6 @@ class Operation(Printable):
         res = copy.copy(transform_op)
         res.end = end_node
 
-        from operation import Operation
         if over_op.op == Operation.INSERT:
             if over_op.pos < res.pos \
                     or (over_op.pos == res.pos and over_op.prec > res.prec):

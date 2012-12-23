@@ -1,3 +1,4 @@
+from .. import Printable
 
 class Remote(Printable):
     """The interface between a Server and a Client
