@@ -69,12 +69,6 @@ class Server(Printable):
         self.next_remote_id += 1
         self.next_precedence += 1
         
-        def on_remote_data(change):
-            if change.prec != new_precedence:
-                raise "Client tried to change it's own precedence"
-            self._apply_change(change=change,
-                              remote_id=new_remote_id)
-
         self.tip.append_state_axis(new_remote_id)
 
         initer = Initializer(
@@ -82,6 +76,12 @@ class Server(Printable):
             precedence=new_precedence,
             initial_value=copy.copy(self.value),
             initial_state=self.tip.get_rel_server_state(new_remote_id))
+
+        def on_remote_data(change):
+            if change.prec != new_precedence:
+                raise "Client tried to change it's own precedence"
+            self._apply_change(change=change,
+                               remote_id=new_remote_id)
 
         new_remote = Remote(
             on_new_remote_change=on_remote_data,

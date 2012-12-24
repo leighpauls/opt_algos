@@ -1,4 +1,4 @@
-from .. import Printable, Ack
+from .. import Printable, Ack, Change
 import copy
 
 class ServerNode(Printable):
@@ -89,5 +89,7 @@ class ServerNode(Printable):
         return rel_server_state
 
     def _get_client_state(self, client_axis):
-        return self.state[client_axis]
+        if client_axis in self.state.keys():
+            return self.state[client_axis]
+        return 0
     
