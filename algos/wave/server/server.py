@@ -1,6 +1,7 @@
 from .. import Printable, Initializer, Operation
 from server_node import ServerNode
 from remote import Remote
+from state import State
 
 import copy
 
@@ -49,15 +50,23 @@ class Server(Printable):
         self._apply_operation(new_tip_operation)
         new_tip = new_tip_operation.end
         
+        youngest_root = State(new_tip.pos)
+
         # tell the remotes about the change
         for cur_remote_id, remote in self.remotes.iteritems():
             if cur_remote_id == remote_id:
-                remote.server_ack_to_client(new_tip.make_ack(cur_remote_id))
+                remote.server_ack_to_client(new_tip.make_ack(cur_remote_id), new_tip.pos)
             else:
                 remote.server_change_available(self.tip.make_change(cur_remote_id))
-            # TODO: see if I can move root to a newer node
-        
+            youngest_root.age_to_include(remote.last_acked_state)
+
         self.tip = new_tip
+
+        # see if I can move the root to a younger node
+        while self.root.operation is not None and \
+                not self.root.operation.end.pos.is_younger_than(youngest_root):
+            self.root = self.root.operation.end
+
 
     def add_new_remote(self, handle_server_change, handle_ack_available):
         """Creates a new Remote controller for communication with a new Client
@@ -87,6 +96,7 @@ class Server(Printable):
             on_new_remote_change=on_remote_data,
             on_new_server_change=handle_server_change,
             on_ack_available=handle_ack_available,
-            initializer=initer)
+            initializer=initer,
+            initial_state=self.tip.pos)
         self.remotes[new_remote_id] = new_remote
         return new_remote

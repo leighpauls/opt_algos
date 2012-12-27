@@ -1,4 +1,5 @@
 from .. import Printable
+from state import State
 
 class Remote(Printable):
     """The interface between a Server and a Client
@@ -12,16 +13,19 @@ class Remote(Printable):
                  on_new_remote_change,
                  on_new_server_change,
                  on_ack_available,
-                 initializer):
+                 initializer,
+                 initial_state):
         self._on_new_remote_change = on_new_remote_change
         self._on_new_server_change = on_new_server_change
         self._on_ack_available = on_ack_available
         self._initializer = initializer
+        self.last_acked_state = State(initial_state)
     def client_change_available(self, change):
         self._on_new_remote_change(change)
     def server_change_available(self, change):
         self._on_new_server_change(change)
-    def server_ack_to_client(self, ack):
+    def server_ack_to_client(self, ack, acking_state):
+        self.last_acked_state = State(acking_state)
         self._on_ack_available(ack)
     def get_initializer(self):
         return self._initializer

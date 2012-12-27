@@ -45,6 +45,7 @@ def simple_client_test():
 
     print client
     print client_2
+    print server
 
 if __name__ == "__main__":
     simple_client_test()
