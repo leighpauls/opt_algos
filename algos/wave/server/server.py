@@ -52,10 +52,10 @@ class Server(Printable):
         # tell the remotes about the change
         for cur_remote_id, remote in self.remotes.iteritems():
             if cur_remote_id == remote_id:
-                # TODO: see if I can move root to a newer node
                 remote.server_ack_to_client(new_tip.make_ack(cur_remote_id))
             else:
                 remote.server_change_available(self.tip.make_change(cur_remote_id))
+            # TODO: see if I can move root to a newer node
         
         self.tip = new_tip
 

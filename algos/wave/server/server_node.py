@@ -1,28 +1,21 @@
 from .. import Printable, Ack, Change
-import copy
+from state import State
 
 class ServerNode(Printable):
-    """A state in the server's history
+    """A state and transition in the server's history
     Attributes:
-    state -- the state vector at this node
+    pos -- the State Object representing this node in state-space
     operation -- server.Operation away from this node
     """
     def __init__(self, old_node=None):
         if old_node is not None:
-            self.state = copy.copy(old_node.state)
+            self.pos = State(old_node.pos)
         else:
-            self.state = {}
+            self.pos = State()
         self.operation = None
 
     def append_state_axis(self, client_id):
-        if client_id in self.state:
-            raise "Tried to append over an existing client axis"
-        self.state[client_id] = 0
-
-    def _increment_state(self, client_id):
-        if client_id not in self.state:
-            raise "Tried to increment a non-existant client axis"
-        self.state[client_id] += 1
+        self.pos.append_state_axis(client_id)
 
     def find_source_of(self, change, remote_id):
         """Finds the node in this list which was the souce of the given change
@@ -33,7 +26,7 @@ class ServerNode(Printable):
         The ServerNode which that change came from
         """
         cur_node = self
-        while cur_node._get_client_state(remote_id) != change.src_client_state \
+        while cur_node.pos.get_axis_state(remote_id) != change.src_client_state \
                 or cur_node.get_rel_server_state(remote_id) != change.src_rel_server_state:
             if cur_node.operation is None:
                 raise "The change did not come from after this node"
@@ -57,7 +50,7 @@ class ServerNode(Printable):
                 end_node = None)
         # cur_node is now the tip
         transformed_op.end = ServerNode(cur_node)
-        transformed_op.end._increment_state(remote_id)
+        transformed_op.end.pos.increment_state(remote_id)
         
         cur_node.operation = transformed_op
         return transformed_op
@@ -65,7 +58,7 @@ class ServerNode(Printable):
     def make_ack(self, remote_id):
         """Make an Ack object for the remote that made this node"""
         return Ack(
-            client_state=self._get_client_state(remote_id),
+            client_state=self.pos.get_axis_state(remote_id),
             rel_server_state=self.get_rel_server_state(remote_id))
 
     def make_change(self, remote_id):
@@ -73,23 +66,13 @@ class ServerNode(Printable):
         Call on the source of the operation in question.
         """
         return Change(
-            src_client_state=self._get_client_state(remote_id),
+            src_client_state=self.pos.get_axis_state(remote_id),
             src_rel_server_state=self.get_rel_server_state(remote_id),
             op=self.operation.op,
             pos=self.operation.pos,
             val=self.operation.val,
             precedence=self.operation.prec)
 
-    def get_rel_server_state(self, client_axis):
-        # TODO: pre-cache the total age
-        rel_server_state = 0
-        for axis, state in self.state.iteritems():
-            if axis != client_axis:
-                rel_server_state += state
-        return rel_server_state
-
-    def _get_client_state(self, client_axis):
-        if client_axis in self.state.keys():
-            return self.state[client_axis]
-        return 0
+    def get_rel_server_state(self, remote_id):
+        return self.pos.get_relative_state(remote_id)
     
