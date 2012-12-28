@@ -41,8 +41,8 @@ class State(Printable):
     def age_to_include(self, other):
         """If needed, make this node older so that all of it's axies are <= other's
         assumes that <self> contains all axies that <other> knows about"""
-        for axis, state in other._val.iteritems():
-            diff = self._val[axis] - state
+        for axis, state in self._val.iteritems():
+            diff = state - other.get_axis_state(axis)
             if diff > 0:
                 self._val[axis] -= diff
                 self._birth_state -= diff

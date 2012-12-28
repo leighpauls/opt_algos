@@ -1,7 +1,7 @@
 from .. import Printable
 from state import State
 
-class Remote(Printable):
+class Remote:
     """The interface between a Server and a Client
     Attributes:
     _on_new_remote_data -- cb to the Server, (Change) -> None

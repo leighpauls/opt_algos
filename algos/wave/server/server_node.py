@@ -1,4 +1,4 @@
-from .. import Printable, Ack, Change
+from .. import Printable, Ack, Change, Operation
 from state import State
 
 class ServerNode(Printable):
@@ -44,10 +44,11 @@ class ServerNode(Printable):
         cur_node = self
         transformed_op = source_operation
         while cur_node.operation is not None:
-            transformed_op = operation.transform(
+            transformed_op = Operation.transform(
                 transform_op = transformed_op,
                 over_op = cur_node.operation,
                 end_node = None)
+            cur_node = cur_node.operation.end
         # cur_node is now the tip
         transformed_op.end = ServerNode(cur_node)
         transformed_op.end.pos.increment_state(remote_id)
