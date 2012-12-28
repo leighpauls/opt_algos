@@ -39,14 +39,18 @@ def simple_client_test():
 
     init_object_2 = remote_2.get_initializer()
     client_2 = wave.client.Client(handle_client_change_2, init_object_2)
+    print "pre-change\nc2:", client_2.value
     client_2.apply_local_change(wave.Operation.DELETE, 1, None)
 
     client.apply_local_change(wave.Operation.INSERT, 1, "x")
 
+    print "pre-resolution\nc1:", client.value
+    print "c2:", client_2.value, ""
+
     buf.resolve_events()
 
-    print client
-    print client_2
+    print "c1:", client.value
+    print "c2:", client_2.value
     print server
 
 if __name__ == "__main__":

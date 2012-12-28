@@ -55,8 +55,9 @@ class Operation(Printable):
         res.end = end_node
 
         if over_op.op == Operation.INSERT:
-            if over_op.pos < res.pos \
-                    or (over_op.pos == res.pos and over_op.prec > res.prec):
+            if over_op.pos < res.pos or (
+                over_op.pos == res.pos and (
+                    over_op.prec > res.prec or res.op == Operation.DELETE)):
                 res.pos += 1
         elif over_op.op == Operation.DELETE:
             if over_op.pos < res.pos:
