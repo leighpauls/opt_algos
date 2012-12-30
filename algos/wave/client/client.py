@@ -1,15 +1,17 @@
-from .. import Operation, Change, Printable
 from client_node import ClientNode
+from .. import Operation, Change
 
-class Client(Printable):
+import copy
+
+class Client:
     """The main state representation of a client within the OPT system
     Attributes:
-    value -- the active value of the tip of this client
-    tip -- the ClientNode at the tip of this Client
-    root -- the oldest historical node that the server could send changes relative to
-    send_change_cb -- function to call when I want to send a change to the server, accepts a Change object
-    local_change_q -- list of ClientNode object's whose local branch should be sent to the server
-    pending_ack -- True iff I'm waitin for the server to ack my last local change before sending the next
+    _value -- the active value of the tip of this client
+    _tip -- the ClientNode at the tip of this Client
+    _root -- the oldest historical node that the server could send changes relative to, where to send changes to the server from, and this will be in line of incomming server changes
+    _local_change_q -- Q of ClientNodes whose local_ops should be sent to the server
+    _send_change_cb -- function to call when I want to send a change to the server, (Change) -> void
+    _pending_ack -- True iff I'm waitin for the server to ack my last local change before sending the next
     """
     def __init__(self, send_change_cb, init):
         """
@@ -17,14 +19,17 @@ class Client(Printable):
         send_change_cb -- The handler for local changes (Change) -> None
         init -- Initializer object sent from the Server
         """
-        self.value = init.initial_value
-        self.tip = self.root = ClientNode(server_state=init.initial_state,
-                                          local_state=0)
-        self.send_change_cb = send_change_cb
-        self.local_change_q = []
-        self.pending_ack = False
-        self.prec = init.precedence
+        self._value = init.initial_value
+        self._tip = self._root = ClientNode(server_state=init.initial_state,
+                                            local_state=0)
+        self._local_change_q = []
+        self._send_change_cb = send_change_cb
+        self._pending_ack = False
+        self._prec = init.precedence
 
+    def get_value(self):
+        return copy.copy(self._value)
+    
     def apply_local_change(self, operation, position, value):
         """Apply the change to the local value and enqueue it to send to the server
         Params:
@@ -32,95 +37,96 @@ class Client(Printable):
         postion -- enumerable position to apply it at
         value -- value to apply for an INSERT operation
         """
-        new_tip = ClientNode(self.tip.server_state, self.tip.local_state + 1)
-        new_edge = Operation(operation, position, value, new_tip, self.prec)
-
-        old_tip = self.tip
-        self.tip = old_tip.set_local_op(new_edge)
-        self._apply_operation(new_edge)
-        self._enqueue_local_change(old_tip)
+        self._apply_change(operation, position, value)
+        new_tip = ClientNode(server_state=self._tip.server_state,
+                             local_state=self._tip.local_state + 1)
+        new_op = Operation(operation=operation,
+                           position=position,
+                           value=value,
+                           end_node=new_tip,
+                           precedence=self._prec)
+        self._tip.set_local_op(new_op)
+        old_tip = self._tip
+        self._tip = new_tip
+        self._local_change_q.append(old_tip)
+        self._try_send_change()
 
     def apply_server_change(self, change):
         """Resolve the server change down to the tip and apply it to the local value
         Params:
         change -- The inbound Change object
         """
-        # transform the change to the tip
-        transform_source_node = self.root.transform_to_find(
-            local_state=change.src_client_state,
-            server_state=change.src_rel_server_state,
-            root=self.root)
+        if change.src_client_state != self._root.local_state:
+            raise "Recieved server change which is not on server axis of root"
+        # find the point in history where this change came from
+        # TODO: keep a "server tip" pointer to skip this loop
+        cur_node = self._root
+        while cur_node.server_state != change.src_rel_server_state:
+            cur_node = cur_node.server_op.end
 
-        raw_operation = Operation.from_server_change(
-            change=change,
-            source_node=transform_source_node)
+        # transform the change down to the tip
+        cur_node.set_server_op(Operation.from_server_change(change, cur_node))
+        transformed_op = cur_node.transform_server_op(
+            end_local_state=self._tip.local_state,
+            root=self._root)
 
-        transform_source_node.set_server_op(raw_operation)
+        if transformed_op is not self._tip.server_op:
+            raise "Transformed to something other than tip"
 
-        # tranform down to the tip + 1 server change
-        old_tip = self.tip
-        self.tip = transform_source_node.transform_to_find(
-            local_state=old_tip.local_state,
-            server_state=transform_source_node.server_state + 1,
-            root=self.root)
-
-        self._apply_operation(old_tip.server_op)
-        # no need to enqueue a remote change
+        # apply the transformed operation locally
+        self._apply_change(operation=transformed_op.op,
+                           position=transformed_op.pos,
+                           value=transformed_op.val)
+        self._tip = transformed_op.end
     
     def apply_server_ack(self, ack):
         """Move the root so to forget about unneeded history objects
         Params:
         ack -- The Ack object sent from the server
         """
-        if not self.pending_ack:
-            raise "Got an ack while not pending on one"
-        self.pending_ack = False
+        if not self._pending_ack:
+            raise "Got ack while not waiting for one"
+        self._pending_ack = False
+        
+        self._local_change_q.pop(0)
+        
+        # transform the remaining local change q to the acked server state
+        # I'm gaurenteed to have a straight line of history from root to (ack - 1 local)
+        most_recent_root = self._root
+        for i in range(len(self._local_change_q)):
+            new_node = self._local_change_q[i].transform_local_op(
+                end_server_state=ack.rel_server_state,
+                root=most_recent_root)
+            most_recent_root = self._local_change_q[i]
+            self._local_change_q[i] = new_node
 
-        # transform all pending changes to align on the
-        # client axis of the new server state
-        new_root = self.root.transform_to_find(local_state=ack.client_state,
-                                               server_state=ack.rel_server_state,
-                                               root=self.root)
-        for i in range(0, len(self.local_change_q)):
-            cur_node = self.local_change_q[i]
-            self.local_change_q[i] = cur_node.transform_to_find(
-                local_state=cur_node.local_state,
-                server_state=new_root.server_state,
-                root=self.root)
-
-        self.root = new_root
-        self._try_send_local_change()
-
-    def _apply_operation(self, operation):
-        if operation.op == Operation.INSERT:
-            self.value.insert(operation.pos, operation.val)
-        elif operation.op == Operation.DELETE:
-            self.value.pop(operation.pos)
-        elif operation.op == Operation.NO_OP:
+        # The start of the local change Q is now ensured to be the new root
+        self._root = self._local_change_q[0] if len(self._local_change_q) > 0 else self._tip
+        self._try_send_change()
+    
+    def _apply_change(self, operation, position, value):
+        """Apply the change to the local value"""
+        if operation == Operation.INSERT:
+            self._value.insert(position, value)
+        elif operation == Operation.DELETE:
+            self._value.pop(position)
+        elif operation == Operation.NOOP:
             None
         else:
-            raise "Unknwown operation: " + operation.op
+            raise "unknown operation: " + operation
 
-    def _enqueue_local_change(self, source_node):
-        self.local_change_q.append(source_node)
-        self._try_send_local_change()
-
-    def _try_send_local_change(self):
-        if self.pending_ack or len(self.local_change_q) == 0:
-            # can't send anything yet
+    def _try_send_change(self):
+        if self._pending_ack or len(self._local_change_q) == 0:
+            # no change ready to send
             return
-        self.pending_ack = True
-        # I can assume at this point that the source node is the root history node
-        source_node = self.local_change_q.pop(0)
-        if source_node is not self.root:
-            raise "trying to send a change from a point that may not be in the server's history"
-        if source_node.local_op is None:
-            raise "Sending something without an op"
-        oper = source_node.local_op
-        change = Change(src_client_state = source_node.local_state,
-                        src_rel_server_state = source_node.server_state,
-                        op = oper.op,
-                        pos = oper.pos,
-                        val = oper.val,
-                        precedence = self.prec)
-        self.send_change_cb(change)
+        if self._local_change_q[0] is not self._root:
+            raise "local change q does not start at root"
+
+        new_change = Change(src_client_state=self._root.local_state,
+                            src_rel_server_state=self._root.server_state,
+                            op=self._root.local_op.op,
+                            pos=self._root.local_op.pos,
+                            val=self._root.local_op.val,
+                            precedence=self._prec)
+        self._pending_ack = True
+        self._send_change_cb(new_change)

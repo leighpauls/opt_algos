@@ -1,142 +1,153 @@
 from .. import Operation
-from .. import Printable
 
-class ClientNode(Printable):
-    """One state in the history graph
-    Attributes:
-    server_state -- The server's independant state (# applied changes) relative to this client at this node
-    local_state -- # applied local changes to get to this state
-    local_op -- The next local operation from this state
-    server_op -- The next remote operation from this state
+class ClientNode:
+    """A single node in the client's history, an intersection between local and server ops
+    Attribtues:
+    server_state -- Number of the server change state
+    local_state -- Number of the local change state
+    local_op -- local Operation occuring after this node
+    server_op -- server Operation occuring after this node
     """
     def __init__(self, server_state, local_state):
-        self.server_state = server_state
-        self.local_state = local_state
+        if type(server_state) is not int:
+            raise "wrong state type"
+        self._server_state = server_state
+        self._local_state = local_state
         self.local_op = None
         self.server_op = None
+
+    @property
+    def server_state(self):
+        return self._server_state
+    @property
+    def local_state(self):
+        return self._local_state
+
     def set_local_op(self, op):
         if self.local_op is not None:
-            raise "Tried to reset a local op"
+            raise "Tried to overwrite local op"
         self.local_op = op
-        return op.end
     def set_server_op(self, op):
         if self.server_op is not None:
-            raise "Tried to reset a server op"
+            raise "Tried to overwrite server op"
         self.server_op = op
-        return op.end
-    def transform_to_find(self, local_state, server_state, root):
-        """Find the given state in the state space below this node
-        Will execute transformations to get there if needed
+
+    def transform_local_op(self, end_server_state, root):
+        """Modify the state space until a local Operation leads out of (self.local_state, end_server_state)
+        Assumes that there is a direct path from <root> to end_server_state along the server axis, and that 
+        <root> is one client op older than self, and 0 or more server ops older
+        Assumes that enough server state operations lead from root to get to <end_server_state>
         Params:
-        local_state -- state value (counter) of the client to find
-        server_satte -- state value (counter) of the server to find
-        root -- A ClientNode gaurenteed to be above both this node and the
-        node I'm tying to find
+        end_server_state -- server state Number to transform the local op to
+        root -- ClientNode gaurenteed to be older than self and the result
         Returns:
-        The found node
+        The ClientNode holding the final transformed op
         """
-        if local_state < self.local_state:
-            raise "Tried to find a local state older than myself"
-        if server_state < self.server_state:
-            raise "Tried to find a server state older than myself"
-        res = self
+        if end_server_state == self.server_state:
+            # no need to transform
+            return self
 
-        while res.local_state != local_state or res.server_state != server_state:
-            if res.local_state < local_state:
-                if res.local_op is not None:
-                    res = res.local_op.end
-                elif res.server_state < server_state and res.server_op is not None:
-                    res = res.server_op.end
-                else:
-                    res = res._transform_to_local(root).end
-            elif res.server_state < server_state:
-                if res.server_op is not None:
-                    res = res.server_op.end
-                else:
-                    res = res._transform_to_server(root).end
+        if root.local_state != self.local_state - 1 or root.server_state >= self.server_state:
+            raise "Trying to use an invalid root"
 
-        return res
-
-    def _transform_to_server(self, root):
-        if self.server_op is not None:
-            raise "Tried to transform over an existing server operation"
-        root._execute_server_transformations_to_node(self)
-        return self.server_op
-
-    def _transform_to_local(self, root):
-        """Transform to the local node and return it"""
-        if self.local_op is not None:
-            raise "Tried to transform over an existing local operation"
-        root._execute_local_transformations_to_node(self)
-        return self.local_op
-
-    def _execute_local_transformations_to_node(self, source_node):
-        """Transform until the node one more local than source node has been made
-        Should be executed from the root node
-        Params:
-        source_node -- The node that the resulting local op should applied to
-        """
-        # find an existing node with the same local state as the source
-        cur_node = self
-        while cur_node.local_state != source_node.local_state:
-            if cur_node.local_op is not None:
-                cur_node = cur_node.local_op.end
-            elif cur_node.server_op is not None:
-                cur_node = cur_node.server_op.end
-            else:
-                raise "Got to a dead end looking for a transformation seed"
-        # look for the last node with this local state to have a local op
-        while cur_node.server_op is not None \
-                and cur_node.server_op.end.local_op is not None:
+        # transform down the root's server axis by building a line of "squares" 
+        # from <root> to the end node diagonal
+        cur_node = root
+        while cur_node.server_state != end_server_state:
+            # make the new local op
+            if cur_node.server_op.end.local_op is None:
+                cur_node._xform_local_over_server()
+            # make the new server op
+            if cur_node.local_op.end.server_op is None:
+                cur_node._xform_server_op_over_local()
             cur_node = cur_node.server_op.end
-        # transform over server operations until we've
-        #  transformed on to the source node
-        while cur_node is not source_node:
-            # tranformation logic
-            # make a blank node if it doesn't already exist
-            if cur_node.local_op.end.server_op is not None:
-                end_node = cur_node.local_op.end.server_op.end
-            else:
-                end_node = ClientNode(local_state=cur_node.local_state + 1,
-                                server_state=cur_node.server_state + 1)
-
-            new_op = operation.transform(tranform_op=cur_node.local_op,
-                                         over_op=cur_node.server_op,
-                                         end_node=end_node)
-            cur_node.server_op.end.set_local_op(new_op)
+        
+        # transform self.local_op down to the end state
+        cur_node = self
+        while cur_node.server_state != end_server_state:
+            # nothing else could have made these transforms yet
+            cur_node._xform_local_over_server()
             cur_node = cur_node.server_op.end
 
-    def _execute_server_transformations_to_node(self, source_node):
-        """Transform until the node one more server_state than the source node exists
-        Should be executed from the root node
+        return cur_node
+
+    def transform_server_op(self, end_local_state, root):
+        """Modify the state space until a server operation leads out of (end_local_state, self.server_state)
+        Assumes that the client has made enough changes to get to end_client_state
         Params:
-        source_node -- The ClientNode that the resulting server op should be applied to
+        end_local_state -- The client state Number to transform down to
+        root -- a ClientNode in the client axis of self, guaranteed to be older than/as old as any client operations in it's axis
+        Returns:
+        The Operation created at the end state
         """
-        # find a node with the same server state as the source
-        cur_node = self
-        while cur_node.server_state != source_node.server_state:
-            if cur_node.server_op is not None:
+        if root.local_state != self.local_state:
+            raise "invalid root provided"
+        if self.local_state > end_local_state:
+            raise "tried to transform a server op backwards"
+
+        # build a straight line of client operations from self to end_client_state
+        # iterate down from root looking for client operations to transform down
+        cur_node = root
+        while cur_node.local_state != end_local_state:
+            # look for a client op
+            while cur_node.local_op is None:
                 cur_node = cur_node.server_op.end
-            elif cur_node.local_op is not None:
-                cur_node = cur_node.local_op.end
-            else:
-                raise "Got to a dead end looking for a transformation seed"
-        # look for the last node with this server state to have a server op
-        while cur_node.local_op is not None \
-                and cur_node.local_op.end.server_op is not None:
+
+            # xform the client op down to my server state
+            xforming_client_node = cur_node
+            while xforming_client_node.server_state != self.server_state:
+                if xforming_client_node.server_op.end.local_op is None:
+                    xforming_client_node._xform_local_over_server()
+                xforming_client_node = xforming_client_node.server_op.end
+
             cur_node = cur_node.local_op.end
-        # transform over local operations until we've transformed
-        # on to the source node
-        while cur_node is not source_node:
-            # make a blank node it it dosn't already exist
-            if cur_node.server_op.end.local_op is not None:
-                end_node = cur_node.server_op.end.local_op.end
-            else:
-                end_node = ClientNode(local_state=cur_node.local_state + 1,
-                                server_state=cur_node.server_state + 1)
+
+        # xform self down the newly build line of local ops
+        cur_node = self
+        while cur_node.local_state != end_local_state:
+            # no one else could have made these transforms yet
+            cur_node._xform_server_over_local()
+            cur_node = cur_node.local_op.end
             
-            new_op = Operation.transform(transform_op=cur_node.server_op,
-                                         over_op=cur_node.local_op,
-                                         end_node=end_node)
-            cur_node.local_op.end.set_server_op(new_op)
-            cur_node = cur_node.local_op.end
+        return cur_node.server_op
+
+    def _verify_xformable(self):
+        if self.local_op is None:
+            raise "Tried to xform with no local op"
+        if self.server_op is None:
+            raise "Tried to xform with no server op"
+
+    def _xform_local_over_server(self):
+        """Transform this node's local operation over it's server operation,
+        and apply it to the server_op end node"""
+        self._verify_xformable()
+
+        if self.local_op.end.server_op is not None:
+            transform_end_node = self.local_op.end.server_op.end
+        else:
+            transform_end_node = ClientNode(
+                client_state=self.client_state + 1,
+                server_state=self.server_state + 1)
+
+        self.server_op.end.set_local_op(Operation.transform(
+                transform_op=self.local_op,
+                over_op=self.server_op,
+                end_node=transform_end_node))
+
+    def _xform_server_over_local(self):
+        """Transform this node's server operation over it's local operation,
+        and apply it to the local_op end node"""
+        self._verify_xformable()
+
+        if self.server_op.end.local_op is not None:
+            transform_end_node = self.server_op.end.local_op.end
+        else:
+            transform_end_node = ClientNode(
+                local_state=self.local_state + 1,
+                server_state=self.server_state + 1)
+
+        self.local_op.end.set_server_op(Operation.transform(
+                transform_op=self.server_op,
+                over_op=self.local_op,
+                end_node=transform_end_node))
+        
