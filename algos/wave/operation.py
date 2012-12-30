@@ -1,7 +1,6 @@
 import copy
-from printable import Printable
 
-class Operation(Printable):
+class Operation:
     NO_OP = "NO_OP"
     INSERT = "INSERT"
     DELETE = "DELETE"
@@ -33,7 +32,7 @@ class Operation(Printable):
     @staticmethod
     def from_server_change(change, source_node):
         """Creates a new operation with a blank end node accoring to a sever's Change""" 
-        from client import ClientNode
+        from client.client_node import ClientNode
         return Operation(operation=change.op,
                          position=change.pos,
                          value=change.val,
@@ -63,7 +62,7 @@ class Operation(Printable):
             if over_op.pos < res.pos:
                 res.pos -= 1
             elif over_op.pos == res.pos and res.op == Operation.DELETE:
-                res.op = NO_OP
+                res.op = Operation.NO_OP
         elif over_op.op == Operation.NO_OP:
             None
         else:

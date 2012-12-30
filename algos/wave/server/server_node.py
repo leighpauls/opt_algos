@@ -1,7 +1,7 @@
-from .. import Printable, Ack, Change, Operation
+from .. import Ack, Change, Operation
 from state import State
 
-class ServerNode(Printable):
+class ServerNode:
     """A state and transition in the server's history
     Attributes:
     pos -- the State Object representing this node in state-space

@@ -1,6 +1,4 @@
-from printable import Printable
-
-class Change(Printable):
+class Change:
     """Represents a change, readable by both Server and Client
     Attributes:
     src_clinet_state -- The source state as understood by the client sending/recieveing this message

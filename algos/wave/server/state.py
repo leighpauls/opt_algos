@@ -1,7 +1,6 @@
-from .. import Printable
 import copy
 
-class State(Printable):
+class State:
     """A point in state-space of the server's history
     Attributes:
     _val -- the state vector at this node

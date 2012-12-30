@@ -1,11 +1,11 @@
-from .. import Printable, Initializer, Operation
+from .. import Initializer, Operation
 from server_node import ServerNode
 from remote import Remote
 from state import State
 
 import copy
 
-class Server(Printable):
+class Server:
     """The main state representation of the Central OPt server
     Attributes:
     next_remote_id -- The next unique id number to assign a new remote to

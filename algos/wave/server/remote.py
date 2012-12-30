@@ -1,4 +1,3 @@
-from .. import Printable
 from state import State
 
 class Remote:
