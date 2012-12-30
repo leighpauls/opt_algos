@@ -47,7 +47,7 @@ class ClientNode:
             # no need to transform
             return self
 
-        if root.local_state != self.local_state - 1 or root.server_state >= self.server_state:
+        if root.local_state != self.local_state - 1 or root.server_state > self.server_state:
             raise "Trying to use an invalid root"
 
         # transform down the root's server axis by building a line of "squares" 
@@ -65,8 +65,8 @@ class ClientNode:
         # transform self.local_op down to the end state
         cur_node = self
         while cur_node.server_state != end_server_state:
-            # nothing else could have made these transforms yet
-            cur_node._xform_local_over_server()
+            if cur_node.server_op.end.local_op is None:
+                cur_node._xform_local_over_server()
             cur_node = cur_node.server_op.end
 
         return cur_node

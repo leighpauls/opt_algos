@@ -57,7 +57,7 @@ def monte_carlo_test(seed):
     buf = ConcurrentBuffer()
 
     num_clients = random.randint(1, 5)
-    clients = [ make_client(server, buf) for _ in xrange(start_len) ]
+    clients = [ make_client(server, buf) for _ in xrange(num_clients) ]
 
     num_cycles = random.randint(1, 10)
     for i in xrange(num_cycles):
@@ -76,16 +76,30 @@ def monte_carlo_test(seed):
                         wave.Operation.DELETE,
                         random.randint(0, value_len-1),
                         None)
-        num_to_leave = random.randint(0, buf.get_num_events() - 1)
-        buf.resolve_events(num_to_leave)
+        num_events = buf.get_num_events()
+        if num_events > 0:
+            num_to_leave = random.randint(0, num_events - 1)
+            buf.resolve_events(num_to_leave)
         # TODO: add some new clients
         # TODO: remove some existing clients
-    for client in clients:
-        print client.value
+
+    # resolve the rest of the events
+    buf.resolve_events()
+    reference_value = clients[0].get_value()
+    passed = True
+    for client in clients[1:]:
+        if client.get_value() != reference_value:
+            passed = False
+    if not passed:
+        raise "Failed test" + seed
+    print "passed", seed
+    return passed
 
 def main():
-    simple_client_test()
+    # simple_client_test()
     # monte_carlo_test(0)
+    for i in xrange(0, 1000):
+        monte_carlo_test(i)
 
 if __name__ == "__main__":
     main()
