@@ -8,6 +8,12 @@ class ConcurrentBuffer:
     def push_event(self, func):
         self.events.append(func)
     
-    def resolve_events(self):
-        while len(self.events) > 0:
+    def resolve_events(self, num_to_leave=None):
+        if num_to_leave is None:
+            num_to_leave = 0
+
+        while len(self.events) > num_to_leave:
             self.events.popleft()()
+
+    def get_num_events(self):
+        return len(self.events)
