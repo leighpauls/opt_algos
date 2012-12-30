@@ -27,6 +27,10 @@ class Client:
         self._pending_ack = False
         self._prec = init.precedence
 
+    def _verify_q_root(self):
+        if len(self._local_change_q) > 0 and self._local_change_q[0] is not self._root:
+            raise "invalid q root"
+
     def get_value(self):
         return copy.copy(self._value)
     
@@ -49,7 +53,9 @@ class Client:
         old_tip = self._tip
         self._tip = new_tip
         self._local_change_q.append(old_tip)
+        self._verify_q_root()
         self._try_send_change()
+        self._verify_q_root()
 
     def apply_server_change(self, change):
         """Resolve the server change down to the tip and apply it to the local value
@@ -77,7 +83,11 @@ class Client:
         self._apply_change(operation=transformed_op.op,
                            position=transformed_op.pos,
                            value=transformed_op.val)
+        old_tip = self._tip
         self._tip = transformed_op.end
+        if self._root is old_tip:
+            self._root = self._tip
+        
     
     def apply_server_ack(self, ack):
         """Move the root so to forget about unneeded history objects
@@ -87,7 +97,8 @@ class Client:
         if not self._pending_ack:
             raise "Got ack while not waiting for one"
         self._pending_ack = False
-        
+
+        self._verify_q_root()        
         self._local_change_q.pop(0)
         
         # transform the remaining local change q to the acked server state
@@ -102,18 +113,9 @@ class Client:
 
         # The start of the local change Q is now ensured to be the new root
         self._root = self._local_change_q[0] if len(self._local_change_q) > 0 else self._tip
+        self._verify_q_root()
         self._try_send_change()
-    
-    def _apply_change(self, operation, position, value):
-        """Apply the change to the local value"""
-        if operation == Operation.INSERT:
-            self._value.insert(position, value)
-        elif operation == Operation.DELETE:
-            self._value.pop(position)
-        elif operation == Operation.NOOP:
-            None
-        else:
-            raise "unknown operation: " + operation
+        self._verify_q_root()
 
     def _try_send_change(self):
         if self._pending_ack or len(self._local_change_q) == 0:
@@ -130,3 +132,14 @@ class Client:
                             precedence=self._prec)
         self._pending_ack = True
         self._send_change_cb(new_change)
+    
+    def _apply_change(self, operation, position, value):
+        """Apply the change to the local value"""
+        if operation == Operation.INSERT:
+            self._value.insert(position, value)
+        elif operation == Operation.DELETE:
+            self._value.pop(position)
+        elif operation == Operation.NO_OP:
+            None
+        else:
+            raise "unknown operation: " + operation
