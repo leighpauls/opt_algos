@@ -9,8 +9,6 @@ class ClientNode:
     server_op -- server Operation occuring after this node
     """
     def __init__(self, server_state, local_state):
-        if type(server_state) is not int:
-            raise "wrong state type"
         self._server_state = server_state
         self._local_state = local_state
         self.local_op = None
@@ -120,7 +118,7 @@ class ClientNode:
     def _xform_local_over_server(self):
         """Transform this node's local operation over it's server operation,
         and apply it to the server_op end node"""
-        self._verify_xformable()
+        # self._verify_xformable()
 
         if self.local_op.end.server_op is not None:
             transform_end_node = self.local_op.end.server_op.end
@@ -137,7 +135,7 @@ class ClientNode:
     def _xform_server_over_local(self):
         """Transform this node's server operation over it's local operation,
         and apply it to the local_op end node"""
-        self._verify_xformable()
+        # self._verify_xformable()
 
         if self.server_op.end.local_op is not None:
             transform_end_node = self.server_op.end.local_op.end

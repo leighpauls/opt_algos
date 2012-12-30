@@ -8,8 +8,6 @@ class Initializer:
     initial_state -- the server state number at the given value
     """
     def __init__(self, remote_id, precedence, initial_value, initial_state):
-        if type(initial_state) is not int:
-            raise "Invalid initial state"
         self.remote_id = remote_id
         self.precedence = precedence
         self.initial_value = initial_value
