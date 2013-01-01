@@ -143,20 +143,23 @@ class Operation:
                 return res
 
             def transform(self, over, end_node):
-                if not isinstance(over, Tree):
-                    return Create(self._end_node, self._index)
                 index = self._index[:]
-                if isinstance(over, Tree.Insert):
+                if not isinstance(over, Tree):
+                    pass
+
+                elif isinstance(over, Tree.Insert):
                     over_len = len(over._index)
                     if over_len <= len(index) and over._index[:-1] == index[:over_len-1] \
                             and (over._index[-1] < index[over_len-1] or (over._index[-1] == index[over_len-1]
                                                                          and over._prec > self.prec)):
                         index[over_len-1] += 1
+
                 elif isinstance(over, Tree.Delete):
                     over_len = len(over._index)
                     if over_len <= len(index) and over._index[:-1] == index[:over_len-1] \
                             and over._index[-1] < index[over_len-1]:
                         index[over_len-1] -= 1
+
                 elif isinstance(over, Tree.Move):
                     src_len = len(over._index)
                     moved = False
@@ -174,6 +177,7 @@ class Operation:
                                      and over._prec > self.prec)):
                         index[dest_len-1] += 1
 
+                return Create(end_node, index)
                 
         class Delete(Tree):
             """Delete the node at _index"""
@@ -195,6 +199,42 @@ class Operation:
                     elif self._index[-1] < res[self_len-1]:
                         res[self_len-1] -= 1
                 return res
+
+            def transform(self, over, end_node):
+                index = self._index[:]
+                if not isinstance(over, Tree):
+                    pass
+
+                elif isinstance(over, Tree.Insert):
+                    over_len = len(over._index)
+                    if over_len <= len(index) and over._index[:-1] == index[:over_len-1] \
+                            and over._index[-1] <= index[over_len-1]:
+                        index[over_len-1] += 1
+
+                elif isinstance(over, Tree.Delete):
+                    over_len = len(over._index)
+                    if over_len <= len(index) and over._index[:-1] == index[:over_len-1]:
+                        if over._index[-1] == index[over_len-1]:
+                            return Operation.NoOp(end_node, self.prec)
+                        elif over._index[-1] < index[over_len-1]:
+                            index[over_len-1] -= 1
+
+                elif isinstance(over, Tree.Move):
+                    src_len = len(over._index)
+                    moved = False
+                    if src_len <= len(index) and over._index[:-1] == index[:src_len-1]:
+                        if over._index[-1] == index[src_len-1]:
+                            index[:src_len] = over._dest_index
+                            moved = True
+                        elif over._index[-1] < index[src_len-1]:
+                            index[src_len-1] -= 1
+
+                    dest_len = len(over._dest_index)
+                    if not moved and dest_len < len(index) and over._dest_index[:-1] == index[:dest_len-1] \
+                            and over._dest_index[-1] <= index[dest_len-1]:
+                        index[dest_len-1] += 1
+
+                return Delete(end_node, index)
                 
         class Move(Tree):
             """Move the node at _index to _dest_index
@@ -229,4 +269,55 @@ class Operation:
                     if self._dest_index[-1] <= res[dest_idx_len-1]:
                         res[dest_idx_len-1] += 1
                 return res
+                    
+            def transform(self, over, end_node):
+                src_index = self._index[:]
+                dest_index = self._dest_index[:]
+                if not isinstance(over, Tree):
+                    pass
+                
+                elif isinstance(over, Tree.Insert):
+                    over_len = len(over._index)
+                    if over_len <= len(src_index) and over._index[:-1] == src_index[:over_len-1] \
+                            and over._index[-1] <= src_index[over_len-1]:
+                        src_index[over_len-1] += 1
+                    
+                    if over_len <= len(dest_index) and over._index[:-1] == dest_index[:over_len-1] \
+                            and (over._index[-1] < dest_index[over_len-1]
+                                 or (over._index[-1] == dest_index[over_len-1] and over._prec > self.prec)):
+                        dest_index[over_len-1] += 1
+
+                elif isinstance(over, Tree.Delete):
+                    over_len = len(over._index)
+                    if over_len <= len(src_index) and over._index[:-1] == src_index[:over_len-1]:
+                        if over._index[-1] == src_index[over_len-1]:
+                            return Operation.NoOp(end_node, self._prec)
+                        elif over._index[-1] < src_index[over_len-1]:
+                            src_index[over_len-1] -= 1
+
+                    if over_len <= len(dest_index) and over._index[:-1] == dest_index[:over_len-1] \
+                            and over._index[-1] < dest_index[over_len-1]:
+                        dest_index[over_len-1] -= 1
+
+                elif isinstance(over, Tree.Move):
+                    over_src_len = len(over._index)
+                    over_dest_len = len(over._dest_index)
+                    src_moved = False
+                    # move my source index according to over's source index?
+                    if over_src_len <= len(src_index) and over._index[:-1] == src_index[:over_src_len-1]:
+                        if over._index[-1] == src_index[over_src_len-1]:
+                            src_index[:over_src_len] = over._dest_index
+                            src_moved = True
+                        elif over._index[-1] < src_index[over_src_len-1]:
+                            src_index[over_src_len-1] -= 1
+
+                    # move my source index according to over's dest index?
+                    if not src_moved and over_dest_len <= len(src_index) \
+                            and over._dest_index[:-1] == src_index[:over_dest_len-1] \
+                            and over._dest_index[-1] <= src_index[over_dest_len-1]:
+                        src_index[over_dest_len-1] += 1
+
+                    dest_moved = False
+                    # TODO: move my dest index according to over's source index?
+                    # TODO: move my dest index according to over's dest index?
                     
