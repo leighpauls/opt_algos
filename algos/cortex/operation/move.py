@@ -6,7 +6,7 @@ class Move(Tree):
     _dest_index -- destination to insert the node moved from _index
     """
     def __init__(self, end_node, index, dest_index):
-        super(Move, self).__init__(end_node, index)
+        Tree.__init__(self, end_node, index)
         self._dest_index = dest_index
 
     def apply(self, value_root):

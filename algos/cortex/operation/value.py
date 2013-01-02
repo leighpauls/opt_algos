@@ -7,7 +7,7 @@ class Value(Operation):
     _linear_index -- location in that node's value being modified
     """
     def __init__(self, end_node, prec, tree_index, linear_index):
-        super(Value, self).__init__(end_node, prec)
+        Operation.__init__(self, end_node, prec)
         self._tree_index = tree_index
         self._linear_index = linear_index
 

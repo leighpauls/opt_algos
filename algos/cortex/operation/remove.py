@@ -3,7 +3,7 @@ from tree import Tree
 class Remove(Tree):
     """Delete the node at _index"""
     def __init__(self, end_node, index):
-        super(Insert, self).__init__(end_node, index)
+        Tree.__init__(self, end_node, index)
 
     def apply(self, value_root):
         node = Tree._navigte_to_index_parent(self._index, value_root)

@@ -25,7 +25,7 @@ class Insert(Value):
         linear_index = self._linear_index
         if isinstance(over, Insert):
             if over._linear_index < linear_index or (
-                over._linear_index == lienar_index and over._prec > self.prec):
+                over._linear_index == linear_index and over._prec > self._prec):
                 linear_index += 1
         elif isinstance(over, Delete):
             if over._linear_index < linear_index:

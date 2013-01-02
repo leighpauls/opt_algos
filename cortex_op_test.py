@@ -6,10 +6,10 @@ def main():
     value2 = value1.clone()
     
     op1 = Insert(None, 1, [], 1, 'd')
-    op2 = Delete(None, 2, [], 0)
+    op2 = Insert(None, 2, [], 1, 'e')
     
     op1_over2 = op1.transform(over=op2, end_node=None)
-    op2_over1 = op2.transfrom(over=op1, end_node=None)
+    op2_over1 = op2.transform(over=op1, end_node=None)
 
     print value1.__dict__, value2.__dict__
     

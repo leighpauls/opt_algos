@@ -6,7 +6,7 @@ class Tree(Operation):
     _index -- list of child indicies to apply the operation at
     """
     def __init__(self, end_node, index):
-        super(Tree, self).__init__(end_node)
+        Operation.__init__(self, end_node)
         self._index = index
 
     @staticmethod

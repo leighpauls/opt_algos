@@ -3,13 +3,13 @@ from value import Value
 class Delete(Value):
     """Delete Value Operation, deletes value at _tree_index,_linear_index"""
     def __init__(self, end_node, prec, tree_index, linear_index):
-        super(Delete, self).__init__(end_node, prec, tree_index, linear_index)
+        Value.__init__(self, end_node, prec, tree_index, linear_index)
 
     def apply(self, value_root):
         node = self._navigate_to_tree_node(value_root)
         node.delete_value(self._linear_index)
 
-    def transfrom(self, over, end_node):
+    def transform(self, over, end_node):
         from insert import Insert
         # find the tree node to apply to
         tree_index = self._get_xformed_tree_index(over)
