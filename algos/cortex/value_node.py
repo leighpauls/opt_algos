@@ -1,8 +1,11 @@
 
 class ValueNode:
-    def __init__(value=[], children=[]):
+    def __init__(self, value=[], children=[]):
         self._value = value
         self._children = children
+
+    def clone(self):
+        return ValueNode(self._value[:], self._children[:])
 
     def get_child(self, child_index):
         return self._children[child_index]
