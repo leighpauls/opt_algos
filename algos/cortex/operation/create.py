@@ -4,12 +4,15 @@ from move import Move
 
 class Create(Tree):
     """Create a new node at _index"""
-    def __init__(self, end_node, index):
-        Tree.__init__(self, end_node, index)
+
+    OP_NAME="CREATE"
+    
+    def __init__(self, end_node, prec, index):
+        Tree.__init__(self, end_node, prec, index)
 
     def apply(self, value_root):
-        node = Tree._navigte_to_index_parent(self._index, value_root)
-        node.create_child(value_root[-1])
+        node = Tree._navigate_to_index_parent(self._index, value_root)
+        node.create_child(self._index[-1])
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]

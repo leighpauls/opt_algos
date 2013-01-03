@@ -5,8 +5,11 @@ class Move(Tree):
     Attributes:
     _dest_index -- destination to insert the node moved from _index
     """
-    def __init__(self, end_node, index, dest_index):
-        Tree.__init__(self, end_node, index)
+
+    OP_NAME="MOVE"
+    
+    def __init__(self, end_node, prec, index, dest_index):
+        Tree.__init__(self, end_node, prec, index)
         self._dest_index = dest_index
 
     def apply(self, value_root):
@@ -102,3 +105,7 @@ class Move(Tree):
                              and over._prec > self.prec)):
                 dest_index[over_dest_len-1] += 1
         return Move(end_node, src_index, dest_index)
+
+    @property
+    def dest_tree_index(self):
+        return self._dest_index

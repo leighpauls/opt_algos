@@ -1,7 +1,6 @@
-import algos.cortex as cortex
-from cortex import ValueNode, Operation
-from cortex.server import Server
-from cortex.client import Client
+from algos.cortex import ValueNode, operation
+from algos.cortex.server import Server
+from algos.cortex.client import Client
 
 def new_test_client(server):
     remote = server.add_new_remote(
@@ -21,23 +20,24 @@ def simple_cortex_test():
 
     client_1 = new_test_client(server)
     client_1.apply_local_change(
-        op_type=Operation.VALUE_INSERT,
-        tree_index=[],
-        value_index=1,
-        value="q")
+        operation.Insert,
+        [],
+        1,
+        "q")
     client_1.apply_local_change(
-        op_type=Operation.SUBTREE_INSERT,
-        tree_index=[0])
+        operation.Create,
+        [0])
     client_1.apply_local_change(
-        op_type=Operation.VALUE_INSERT,
-        tree_index=[0],
-        value_index=0,
-        value="w")
+        operation.Insert,
+        [0],
+        0,
+        "w")
 
     client_2 = new_test_client(server)
 
-    print client_1
-    print client_2
+    print server.value
+    print client_1._value
+    print client_2._value
     
 if __name__ == "__main__":
     simple_cortex_test()

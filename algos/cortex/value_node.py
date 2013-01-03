@@ -4,6 +4,13 @@ class ValueNode:
         self._value = value
         self._children = children
 
+    def __str__(self):
+        res = "<" + "".join(self._value) + ", ["
+        for child in self._children:
+            res += child.__str__() + ", "
+        res += "]>"
+        return res
+
     def clone(self):
         return ValueNode(self._value[:], self._children[:])
 

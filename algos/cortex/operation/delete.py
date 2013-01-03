@@ -2,6 +2,9 @@ from value import Value
 
 class Delete(Value):
     """Delete Value Operation, deletes value at _tree_index,_linear_index"""
+    
+    OP_NAME="DELETE"
+
     def __init__(self, end_node, prec, tree_index, linear_index):
         Value.__init__(self, end_node, prec, tree_index, linear_index)
 

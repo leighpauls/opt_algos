@@ -5,8 +5,8 @@ class Tree(Operation):
     Attributes:
     _index -- list of child indicies to apply the operation at
     """
-    def __init__(self, end_node, index):
-        Operation.__init__(self, end_node)
+    def __init__(self, end_node, prec, index):
+        Operation.__init__(self, end_node, prec)
         self._index = index
 
     @staticmethod
@@ -17,3 +17,7 @@ class Tree(Operation):
         for i in index[:-1]:
             cur_node = cur_node.get_child(i)
         return cur_node
+
+    @property
+    def tree_index(self):
+        return self._index

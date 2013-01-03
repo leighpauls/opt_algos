@@ -22,3 +22,10 @@ class Value(Operation):
         if not isinstance(over, Tree):
             return self._tree_index[:]
         return over._relocate_tree_index(self._tree_index)
+
+    @property
+    def tree_index(self):
+        return self._tree_index
+    @property
+    def linear_index(self):
+        return self._linear_index

@@ -1,6 +1,7 @@
 from operation import Operation 
 
 class NoOp(Operation):
+    OP_NAME="NO_OP"
     def __init__(self, end_node, prec):
         Operation.__init__(self, end_node, prec)
 

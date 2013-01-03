@@ -6,9 +6,11 @@ class Insert(Value):
     Attributes:
     value -- the value to insert at _tree_index,_linear_index
     """
-    def __init__(self, end_node, prec, tree_index, linear_index, value):
+    OP_NAME = "INSERT"
+
+    def __init__(self, end_node, prec, tree_index, linear_index, val):
         Value.__init__(self, end_node, prec, tree_index, linear_index)
-        self._value = value
+        self._value = val
 
     def apply(self, value_root):
         node = self._navigate_to_tree_node(value_root)
@@ -32,3 +34,7 @@ class Insert(Value):
                 linear_index -= 1
 
         return Insert(end_node, self._prec, tree_index, linear_index, self._value)
+
+    @property
+    def val(self):
+        return self._value
