@@ -1,4 +1,5 @@
 from value import Value
+from no_op import NoOp
 
 
 class Insert(Value):
@@ -21,17 +22,18 @@ class Insert(Value):
         # find the tree node to apply to
         tree_index = self._get_xformed_tree_index(over)
         if tree_index is None:
-            return Operation.NoOp(end_node)
+            return NoOp(end_node, self._prec)
 
         # find the location in the value to apply to
         linear_index = self._linear_index
-        if isinstance(over, Insert):
-            if over._linear_index < linear_index or (
-                over._linear_index == linear_index and over._prec > self._prec):
-                linear_index += 1
-        elif isinstance(over, Delete):
-            if over._linear_index < linear_index:
-                linear_index -= 1
+        if isinstance(over, Value) and over._tree_index == tree_index:
+            if isinstance(over, Insert):
+                if over._linear_index < linear_index or (
+                    over._linear_index == linear_index and over._prec > self._prec):
+                    linear_index += 1
+            elif isinstance(over, Delete):
+                if over._linear_index < linear_index:
+                    linear_index -= 1
 
         return Insert(end_node, self._prec, tree_index, linear_index, self._value)
 

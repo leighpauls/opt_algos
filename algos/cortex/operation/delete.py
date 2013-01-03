@@ -21,13 +21,14 @@ class Delete(Value):
 
         # find where in the value to apply the delete
         linear_index = self._linear_index
-        if isinstance(over, Insert):
-            if over._linear_index <= linear_index:
-                linear_index += 1
-        elif isinstance(over, Delete):
-            if over._linear_index < linear_index:
-                linear_index -= 1
-            elif over._linear_index == linear_index:
-                return Operation.NoOp(end_node)
+        if isinstance(over, Value) and over._tree_index == tree_index:
+            if isinstance(over, Insert):
+                if over._linear_index <= linear_index:
+                    linear_index += 1
+            elif isinstance(over, Delete):
+                if over._linear_index < linear_index:
+                    linear_index -= 1
+                elif over._linear_index == linear_index:
+                    return Operation.NoOp(end_node)
 
         return Delete(end_node, self._prec, tree_index, linear_index)
