@@ -26,7 +26,7 @@ class Operation(object):
                           linear_index=change.linear_index)
         elif change.op == NoOp.OP_NAME:
             return NoOp(end_node=end_node,
-                        prec=prec)
+                        prec=change.prec)
         elif change.op == Create.OP_NAME:
             return Create(end_node=end_node,
                           prec=change.prec,

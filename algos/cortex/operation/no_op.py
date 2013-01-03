@@ -7,4 +7,4 @@ class NoOp(Operation):
 
     def apply(self, value_tree): pass
     def transform(self, over, end_node):
-        return NoOp(end_node)
+        return NoOp(end_node, self._prec)

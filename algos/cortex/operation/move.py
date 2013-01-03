@@ -1,4 +1,5 @@
 from tree import Tree
+from no_op import NoOp
 
 class Move(Tree):
     """Move the node at _index to _dest_index
@@ -68,7 +69,7 @@ class Move(Tree):
             over_len = len(over._index)
             if over_len <= len(src_index) and over._index[:-1] == src_index[:over_len-1]:
                 if over._index[-1] == src_index[over_len-1]:
-                    return Operation.NoOp(end_node, self._prec)
+                    return NoOp(end_node, self._prec)
                 elif over._index[-1] < src_index[over_len-1]:
                     src_index[over_len-1] -= 1
 
@@ -76,7 +77,7 @@ class Move(Tree):
                     and over._index[-1] < dest_index[over_len-1]:
                 dest_index[over_len-1] -= 1
 
-        elif isinstance(over, Tree.Move):
+        elif isinstance(over, Move):
             over_src_len = len(over._index)
             over_dest_len = len(over._dest_index)
             src_moved = False
@@ -110,7 +111,7 @@ class Move(Tree):
                          or (over._dest_index[-1] == dest_index[over_dest_len-1]
                              and over._prec > self.prec)):
                 dest_index[over_dest_len-1] += 1
-        return Move(end_node, src_index, dest_index)
+        return Move(end_node, self._prec, src_index, dest_index)
 
     @property
     def dest_tree_index(self):
