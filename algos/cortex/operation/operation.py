@@ -10,6 +10,7 @@ class Operation(object):
         from insert import Insert
         from delete import Delete
         from create import Create
+        from remove import Remove
         from move import Move
 
         if change.op == Insert.OP_NAME:

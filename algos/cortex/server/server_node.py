@@ -71,7 +71,7 @@ class ServerNode:
             src_rel_server_state=self.get_rel_server_state(remote_id),
             op=self.operation.op,
             tree_index=self.operation.tree_index,
-            dest_tree_index=self.dest_tree_index,
+            dest_tree_index=self.operation.dest_tree_index,
             linear_index=self.operation.linear_index,
             val=self.operation.val,
             precedence=self.operation.prec)

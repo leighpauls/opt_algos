@@ -25,6 +25,9 @@ class Create(Tree):
         return res
 
     def transform(self, over, end_node):
+        from remove import Remove
+        from move import Move
+
         index = self._index[:]
         if not isinstance(over, Tree):
             pass
@@ -59,4 +62,4 @@ class Create(Tree):
                              and over._prec > self.prec)):
                 index[dest_len-1] += 1
 
-        return Create(end_node, index)
+        return Create(end_node, self._prec, index)

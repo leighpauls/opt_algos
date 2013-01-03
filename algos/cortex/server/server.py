@@ -4,8 +4,6 @@ from server_node import ServerNode
 from remote import Remote
 from state import State
 
-import copy
-
 class Server:
     """The main state representation of the Central OPt server
     Attributes:
@@ -22,7 +20,7 @@ class Server:
         self.remotes = {}
         self.root = self.tip = ServerNode()
         self.root.append_state_axis(Server.SERVER_HIDDEN_ID)
-        self.value = copy.copy(initial_value) if initial_value is not None else []
+        self.value = initial_value.clone_tree() if initial_value is not None else ValueNode()
 
     def _apply_change(self, change, remote_id):
         """Apply the change provided to the server state,
@@ -73,7 +71,7 @@ class Server:
         initer = Initializer(
             remote_id=new_remote_id,
             precedence=new_precedence,
-            initial_value=copy.copy(self.value),
+            initial_value=self.value.clone_tree(),
             initial_state=self.tip.get_rel_server_state(new_remote_id))
 
         def on_remote_data(change):

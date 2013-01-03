@@ -9,7 +9,7 @@ class Remove(Tree):
         Tree.__init__(self, end_node, prec, index)
 
     def apply(self, value_root):
-        node = Tree._navigte_to_index_parent(self._index, value_root)
+        node = Tree._navigate_to_index_parent(self._index, value_root)
         node.pop_child(self._index[-1])
 
     def _relocate_tree_index(self, old_index):
@@ -25,11 +25,14 @@ class Remove(Tree):
         return res
 
     def transform(self, over, end_node):
+        from insert import Insert
+        from move import Move
+        
         index = self._index[:]
         if not isinstance(over, Tree):
             pass
 
-        elif isinstance(over, Tree.Insert):
+        elif isinstance(over, Insert):
             over_len = len(over._index)
             if over_len <= len(index) and over._index[:-1] == index[:over_len-1] \
                     and over._index[-1] <= index[over_len-1]:
@@ -43,7 +46,7 @@ class Remove(Tree):
                 elif over._index[-1] < index[over_len-1]:
                     index[over_len-1] -= 1
 
-        elif isinstance(over, Tree.Move):
+        elif isinstance(over, Move):
             src_len = len(over._index)
             moved = False
             if src_len <= len(index) and over._index[:-1] == index[:src_len-1]:
@@ -58,4 +61,4 @@ class Remove(Tree):
                     and over._dest_index[-1] <= index[dest_len-1]:
                 index[dest_len-1] += 1
 
-        return Delete(end_node, index)
+        return Remove(end_node, self._prec, index)
