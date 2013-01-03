@@ -11,12 +11,18 @@ class Move(Tree):
     def __init__(self, end_node, prec, index, dest_index):
         Tree.__init__(self, end_node, prec, index)
         self._dest_index = dest_index
+        if len(self._index) < len(self._dest_index) and self._index == self._dest_index[:len(self._index)]:
+            raise Exception("Tried to move node under it's self")
 
     def apply(self, value_root):
-        source_parent = Tree._navigate_to_index_parent(self._index, value_root)
-        dest_parent = Tree._nacigate_to_index_parent(self._dest_index, value_root)
+        fixed_dest = self._dest_index[:]
+        index_len = len(self._index)
+        if index_len <= len(fixed_dest) and self._index[-1] < fixed_dest[index_len-1]:
+            fixed_dest[index_len-1] -= 1
 
-        dest_parent.add_child(self._dest_index[-1], source_parent.pop_child(self._index[-1]))
+        temp = Tree._navigate_to_index_parent(self._index, value_root).pop_child(self._index[-1])
+        Tree._navigate_to_index_parent(fixed_dest, value_root).insert_child(
+            fixed_dest[-1], temp)
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]

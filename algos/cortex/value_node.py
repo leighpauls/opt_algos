@@ -1,18 +1,25 @@
 
 class ValueNode:
-    def __init__(self, value=[], children=[]):
-        self._value = value
-        self._children = children
+    def __init__(self, value=None, children=None):
+        self._value = value if value is not None else []
+        self._children = children if children is not None else []
+
+    # TODO: remove these debug properties
+    @property
+    def children(self):
+        return self._children
+    @property
+    def value(self):
+        return self._value
 
     def __str__(self):
         res = "<" + "".join(self._value) + ", ["
         for child in self._children:
+            if child is self:
+                raise Exception("Trying to print self as child")
             res += child.__str__() + ", "
         res += "]>"
         return res
-
-    def clone(self):
-        return ValueNode(self._value[:], self._children[:])
 
     def get_child(self, child_index):
         return self._children[child_index]
@@ -27,6 +34,8 @@ class ValueNode:
         self._children.insert(child_index, ValueNode())
     
     def insert_child(self, child_index, child):
+        if child is self:
+            raise Exception("Tried to add self as child")
         self._children.insert(child_index, child)
 
     def pop_child(self, child_index):

@@ -3,6 +3,7 @@ from ..operation.operation import Operation
 from server_node import ServerNode
 from remote import Remote
 from state import State
+from .. import ValueNode
 
 class Server:
     """The main state representation of the Central OPt server
