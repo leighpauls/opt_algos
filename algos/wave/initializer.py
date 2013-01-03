@@ -11,8 +11,4 @@ class Initializer:
         self.remote_id = remote_id
         self.precedence = precedence
         self.initial_value = initial_value
-        self._initial_state = initial_state
-        
-    @property
-    def initial_state(self):
-        return self._initial_state
+        self.initial_state = initial_state

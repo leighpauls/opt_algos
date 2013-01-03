@@ -1,4 +1,5 @@
-from .. import Initializer, Operation
+from .. import Initializer
+from ..operation.operation import Operation
 from server_node import ServerNode
 from remote import Remote
 from state import State
@@ -22,17 +23,6 @@ class Server:
         self.root = self.tip = ServerNode()
         self.root.append_state_axis(Server.SERVER_HIDDEN_ID)
         self.value = copy.copy(initial_value) if initial_value is not None else []
-        
-    def _apply_operation(self, operation):
-        if operation.op == Operation.INSERT:
-            self.value.insert(operation.pos, operation.val)
-        elif operation.op == Operation.DELETE:
-            self.value.pop(operation.pos)
-        elif operation.op == Operation.NO_OP:
-            None
-        else:
-            raise "Unknwown operation: " + operation.op
-
 
     def _apply_change(self, change, remote_id):
         """Apply the change provided to the server state,
@@ -43,11 +33,11 @@ class Server:
         """
         # find the source state of the change
         source_node = self.root.find_source_of(change, remote_id)
-        source_operation = Operation.from_remote_change(change)
+        source_operation = Operation.from_change(change, None)
 
         # transform down to the tip
         new_tip_operation = source_node.transform_to_tip(source_operation, remote_id)
-        self._apply_operation(new_tip_operation)
+        new_tip_operation.apply(self.value)
         new_tip = new_tip_operation.end
         
         youngest_root = State(new_tip.pos)

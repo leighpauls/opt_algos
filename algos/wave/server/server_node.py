@@ -1,4 +1,5 @@
-from .. import Ack, Change, Operation
+from .. import Ack, Change
+from ..operation.operation import Operation
 from state import State
 
 class ServerNode:
@@ -44,10 +45,9 @@ class ServerNode:
         cur_node = self
         transformed_op = source_operation
         while cur_node.operation is not None:
-            transformed_op = Operation.transform(
-                transform_op = transformed_op,
-                over_op = cur_node.operation,
-                end_node = None)
+            transformed_op = transformed_op.transform(
+                end_node=None,
+                over=cur_node.operation)
             cur_node = cur_node.operation.end
         # cur_node is now the tip
         transformed_op.end = ServerNode(cur_node)

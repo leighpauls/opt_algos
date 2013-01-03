@@ -1,7 +1,6 @@
 from client_node import ClientNode
-from .. import Operation, Change
-
-import copy
+from .. import Change
+from ..operation.operation import Operation
 
 class Client:
     """The main state representation of a client within the OPT system
@@ -27,25 +26,23 @@ class Client:
         self._pending_ack = False
         self._prec = init.precedence
 
-    def get_value(self):
-        return copy.copy(self._value)
+    @property
+    def value(self):
+        return self._value[:]
+    @property
+    def prec(self):
+        return self._prec
     
-    def apply_local_change(self, operation, position, value):
+    def apply_local_change(self, operation_class, *op_args):
         """Apply the change to the local value and enqueue it to send to the server
         Params:
-        operation -- The op to apply
-        postion -- enumerable position to apply it at
-        value -- value to apply for an INSERT operation
+        operation -- The Operation to apply
         """
-        self._apply_change(operation, position, value)
         new_tip = ClientNode(server_state=self._tip.server_state,
                              local_state=self._tip.local_state + 1)
-        new_op = Operation(operation=operation,
-                           position=position,
-                           value=value,
-                           end_node=new_tip,
-                           precedence=self._prec)
-        self._tip.set_local_op(new_op)
+        operation = operation_class(new_tip, self._prec, *op_args)
+        operation.apply(self._value)
+        self._tip.set_local_op(operation)
         old_tip = self._tip
         self._tip = new_tip
         self._local_change_q.append(old_tip)
@@ -65,15 +62,16 @@ class Client:
             cur_node = cur_node.server_op.end
 
         # transform the change down to the tip
-        cur_node.set_server_op(Operation.from_server_change(change, cur_node))
+        cur_node.set_server_op(Operation.from_change(change, ClientNode(
+                    server_state=change.src_rel_server_state+1,
+                    local_state=change.src_client_state)))
         transformed_op = cur_node.transform_server_op(
             end_local_state=self._tip.local_state,
             root=self._root)
 
         # apply the transformed operation locally
-        self._apply_change(operation=transformed_op.op,
-                           position=transformed_op.pos,
-                           value=transformed_op.val)
+        transformed_op.apply(self._value)
+
         old_tip = self._tip
         self._tip = transformed_op.end
         if self._root is old_tip:
@@ -119,13 +117,3 @@ class Client:
         self._pending_ack = True
         self._send_change_cb(new_change)
     
-    def _apply_change(self, operation, position, value):
-        """Apply the change to the local value"""
-        if operation == Operation.INSERT:
-            self._value.insert(position, value)
-        elif operation == Operation.DELETE:
-            self._value.pop(position)
-        elif operation == Operation.NO_OP:
-            None
-        else:
-            raise "unknown operation: " + operation

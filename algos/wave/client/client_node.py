@@ -1,4 +1,4 @@
-from .. import Operation
+from ..operation import *
 
 class ClientNode:
     """A single node in the client's history, an intersection between local and server ops
@@ -127,9 +127,8 @@ class ClientNode:
                 client_state=self.client_state + 1,
                 server_state=self.server_state + 1)
 
-        self.server_op.end.set_local_op(Operation.transform(
-                transform_op=self.local_op,
-                over_op=self.server_op,
+        self.server_op.end.set_local_op(self.local_op.transform(
+                over=self.server_op,
                 end_node=transform_end_node))
 
     def _xform_server_over_local(self):
@@ -144,8 +143,7 @@ class ClientNode:
                 local_state=self.local_state + 1,
                 server_state=self.server_state + 1)
 
-        self.local_op.end.set_server_op(Operation.transform(
-                transform_op=self.server_op,
-                over_op=self.local_op,
+        self.local_op.end.set_server_op(self.server_op.transform(
+                over=self.local_op,
                 end_node=transform_end_node))
         

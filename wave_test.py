@@ -25,25 +25,25 @@ def simple_client_test():
     buf = ConcurrentBuffer()
 
     client_1 = make_client(server, buf)
-    client_1.apply_local_change(wave.Operation.INSERT, 0, "a")
-    client_1.apply_local_change(wave.Operation.INSERT, 1, "b")
+    client_1.apply_local_change(wave.operation.Insert, 0, "a")
+    client_1.apply_local_change(wave.operation.Insert, 1, "b")
 
     buf.resolve_events()
 
     client_2 = make_client(server, buf)
 
-    print "pre-change\nc2:", client_2.get_value()
-    client_2.apply_local_change(wave.Operation.DELETE, 1, None)
+    print "pre-change\nc2:", client_2.value
+    client_2.apply_local_change(wave.operation.Delete, 1)
 
-    client_1.apply_local_change(wave.Operation.INSERT, 1, "x")
+    client_1.apply_local_change(wave.operation.Insert, 1, "x")
 
-    print "pre-resolution\nc1:", client_1.get_value()
-    print "c2:", client_2.get_value(), ""
+    print "pre-resolution\nc1:", client_1.value
+    print "c2:", client_2.value, ""
 
     buf.resolve_events()
 
-    print "c1:", client_1.get_value()
-    print "c2:", client_2.get_value()
+    print "c1:", client_1.value
+    print "c2:", client_2.value
     print server
 
 def monte_carlo_test(seed):
@@ -64,18 +64,17 @@ def monte_carlo_test(seed):
         for client in clients:
             num_ops = random.randint(0, 10)
             for _ in xrange(num_ops):
-                value_len = len(client.get_value())
+                value_len = len(client.value)
                 is_insert = (value_len == 0) or random.choice([True, False])
                 if is_insert:
                     client.apply_local_change(
-                        wave.Operation.INSERT,
+                        wave.operation.Insert,
                         random.randint(0, value_len),
                         random.choice(chars))
                 else:
                     client.apply_local_change(
-                        wave.Operation.DELETE,
-                        random.randint(0, value_len-1),
-                        None)
+                        wave.operation.Delete,
+                        random.randint(0, value_len-1))
         num_events = buf.get_num_events()
         if num_events > 0:
             num_to_leave = random.randint(0, num_events - 1)
@@ -85,10 +84,10 @@ def monte_carlo_test(seed):
 
     # resolve the rest of the events
     buf.resolve_events()
-    reference_value = clients[0].get_value()
+    reference_value = clients[0].value
     passed = True
     for client in clients[1:]:
-        if client.get_value() != reference_value:
+        if client.value != reference_value:
             passed = False
     if not passed:
         raise "Failed test" + seed
@@ -98,7 +97,7 @@ def monte_carlo_test(seed):
 def main():
     # simple_client_test()
     # monte_carlo_test(0)
-    for i in xrange(0, 1000):
+    for i in xrange(0, 100000):
         monte_carlo_test(i)
 
 if __name__ == "__main__":
