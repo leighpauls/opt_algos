@@ -12,7 +12,7 @@ class ClientNode:
         self._server_state = server_state
         self._local_state = local_state
         self.local_op = None
-        self.server_op = None
+        self.server_op = None        
 
     @property
     def server_state(self):
@@ -146,4 +146,48 @@ class ClientNode:
         self.local_op.end.set_server_op(self.server_op.transform(
                 over=self.local_op,
                 end_node=transform_end_node))
+
+    def to_csv_cell(self):
+        return "(" + str(self._server_state) + " " + str(self._local_state) + ")"
+
+    def dump_csv(self):
+        with open("node_dump.csv", "w") as f:
+            # server accross, client down
+            x = 0
+            y = 0
+            next_row_start = 0
+            next_row_node = self
+
+            while next_row_node is not None:
+                cur_row = []
+                local_row = []
+                # add leading commas
+                for i in xrange(0, next_row_start):
+                    cur_row.append("")
+                    local_row.append("")
+                cur_node = next_row_node
+                next_row_node = None
+                
+                while cur_node is not None:
+                    cur_row.append(cur_node.to_csv_cell())                        
+
+                    if cur_node.local_op is not None:
+                        local_row.append(cur_node.local_op.to_csv_cell())
+                        if next_row_node is None:
+                            next_row_node = cur_node.local_op.end
+                            next_row_start = len(local_row)/2
+                    else:
+                        local_row.append("")
+                        
+                    local_row.append("")
+                    
+                    if cur_node.server_op is not None:
+                        cur_row.append(cur_node.server_op.to_csv_cell())
+                        cur_node = cur_node.server_op.end
+                    else:
+                        cur_node = None
+
+                f.write("\t".join(cur_row) + "\n")
+                f.write("\t".join(local_row) + "\n")
+                
         

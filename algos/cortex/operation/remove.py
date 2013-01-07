@@ -62,3 +62,6 @@ class Remove(Tree):
                 index[dest_len-1] += 1
 
         return Remove(end_node, self._prec, index)
+
+    def to_csv_cell(self):
+        return "REM " + str(self._index) + " p" + str(self._prec)

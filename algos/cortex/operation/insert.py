@@ -40,3 +40,6 @@ class Insert(Value):
     @property
     def val(self):
         return self._value
+
+    def to_csv_cell(self):
+        return "INS " + str(self._tree_index) + " " + str(self._linear_index) + " p" + str(self._prec)

@@ -63,3 +63,6 @@ class Create(Tree):
                 index[dest_len-1] += 1
 
         return Create(end_node, self._prec, index)
+
+    def to_csv_cell(self):
+        return "CRE " + str(self._index) + " p" + str(self._prec)

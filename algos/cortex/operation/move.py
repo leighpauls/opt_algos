@@ -116,3 +116,6 @@ class Move(Tree):
     @property
     def dest_tree_index(self):
         return self._dest_index
+
+    def to_csv_cell(self):
+        return "MOV " + str(self._index) + " to " + str(self._dest_index) + " p" + str(self._prec)
