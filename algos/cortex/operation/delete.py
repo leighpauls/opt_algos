@@ -29,7 +29,8 @@ class Delete(Value):
                 if over._linear_index < linear_index:
                     linear_index -= 1
                 elif over._linear_index == linear_index:
-                    return Operation.NoOp(end_node)
+                    from no_op import NoOp
+                    return NoOp(end_node, self._prec)
 
         return Delete(end_node, self._prec, tree_index, linear_index)
 

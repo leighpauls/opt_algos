@@ -25,14 +25,14 @@ class Remove(Tree):
         return res
 
     def transform(self, over, end_node):
-        from insert import Insert
+        from create import Create
         from move import Move
         
         index = self._index[:]
         if not isinstance(over, Tree):
             pass
 
-        elif isinstance(over, Insert):
+        elif isinstance(over, Create):
             over_len = len(over._index)
             if over_len <= len(index) and over._index[:-1] == index[:over_len-1] \
                     and over._index[-1] <= index[over_len-1]:
@@ -57,7 +57,7 @@ class Remove(Tree):
                     index[src_len-1] -= 1
 
             dest_len = len(over._dest_index)
-            if not moved and dest_len < len(index) and over._dest_index[:-1] == index[:dest_len-1] \
+            if not moved and dest_len <= len(index) and over._dest_index[:-1] == index[:dest_len-1] \
                     and over._dest_index[-1] <= index[dest_len-1]:
                 index[dest_len-1] += 1
 

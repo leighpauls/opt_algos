@@ -3,6 +3,7 @@ from no_op import NoOp
 
 class Move(Tree):
     """Move the node at _index to _dest_index
+    Removes the node at _index, then re-inserts it at _dest_index after the later sister nodes have been shifted to fill the gap
     Attributes:
     _dest_index -- destination to insert the node moved from _index
     """
@@ -16,14 +17,10 @@ class Move(Tree):
             raise Exception("Tried to move node under it's self")
 
     def apply(self, value_root):
-        fixed_dest = self._dest_index[:]
-        index_len = len(self._index)
-        if index_len <= len(fixed_dest) and self._index[-1] < fixed_dest[index_len-1]:
-            fixed_dest[index_len-1] -= 1
-
         temp = Tree._navigate_to_index_parent(self._index, value_root).pop_child(self._index[-1])
-        Tree._navigate_to_index_parent(fixed_dest, value_root).insert_child(
-            fixed_dest[-1], temp)
+        dest_parent = Tree._navigate_to_index_parent(self._dest_index, value_root)
+        dest_parent.insert_child(
+            self._dest_index[-1], temp)
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]
@@ -64,11 +61,17 @@ class Move(Tree):
                     and (over._index[-1] < dest_index[over_len-1]
                          or (over._index[-1] == dest_index[over_len-1] and over._prec > self.prec)):
                 dest_index[over_len-1] += 1
+            # import pdb, pprint
+            # pprint.PrettyPrinter().pprint(("Create", self.__dict__, over.__dict__, (src_index, dest_index)))
+            # pdb.set_trace()
 
         elif isinstance(over, Remove):
             over_len = len(over._index)
             if over_len <= len(src_index) and over._index[:-1] == src_index[:over_len-1]:
                 if over._index[-1] == src_index[over_len-1]:
+                    # import pdb, pprint
+                    # pprint.PrettyPrinter().pprint((self.__dict__, over.__dict__, "NOOP!!!!!!!!!!!!!!!!!!"))
+                    # pdb.set_trace()
                     return NoOp(end_node, self._prec)
                 elif over._index[-1] < src_index[over_len-1]:
                     src_index[over_len-1] -= 1
@@ -76,41 +79,44 @@ class Move(Tree):
             if over_len <= len(dest_index) and over._index[:-1] == dest_index[:over_len-1] \
                     and over._index[-1] < dest_index[over_len-1]:
                 dest_index[over_len-1] -= 1
+            # import pdb, pprint
+            # pprint.PrettyPrinter().pprint(("Remove", self.__dict__, over.__dict__, (src_index, dest_index)))
+            # pdb.set_trace()
+
 
         elif isinstance(over, Move):
             over_src_len = len(over._index)
             over_dest_len = len(over._dest_index)
+            my_src_len = len(src_index)
+            my_dest_len = len(dest_index)
+            
+            # move my src idx
             src_moved = False
-            # move my source index according to over's source index?
-            if over_src_len <= len(src_index) and over._index[:-1] == src_index[:over_src_len-1]:
+            if over_src_len <= my_src_len and over._index[:-1] == src_index[:over_src_len-1]:
                 if over._index[-1] == src_index[over_src_len-1]:
-                    src_index[:over_src_len] = over._dest_index
                     src_moved = True
+                    src_index[:over_src_len] = over._dest_index
                 elif over._index[-1] < src_index[over_src_len-1]:
                     src_index[over_src_len-1] -= 1
-
-            # move my source index according to over's dest index?
-            if not src_moved and over_dest_len <= len(src_index) \
-                    and over._dest_index[:-1] == src_index[:over_dest_len-1] \
+            if not src_moved and over_dest_len <= my_src_len and over._dest_index[:-1] == src_index[:over_dest_len-1] \
                     and over._dest_index[-1] <= src_index[over_dest_len-1]:
                 src_index[over_dest_len-1] += 1
 
             dest_moved = False
-            # move my dest index according to over's source index?
-            if over_src_len <= len(dest_index) and over._index[:-1] == dest_index[:over_src_len-1]:
-                if over._index[-1] == dest_index[over_src_len-1]:
-                    dest_index[:over_src_len] = over._dest_index
+            if over_src_len <= my_dest_len and over._index[:-1] == dest_index[:over_src_len-1]:
+                if over._index[-1] == dest_index[-1] and over_src_len > my_dest_len:
                     dest_moved = True
+                    dest_index[:over_src_len] = over._dest_index
                 elif over._index[-1] < dest_index[over_src_len-1]:
                     dest_index[over_src_len-1] -= 1
-
-            # move my dest index according to over's dest index?
-            if not dest_moved and over_dest_len < len(dest_index) \
-                    and over._dest_index[:-1] == dest_index[:over_dest_len-1] \
-                    and (over._dest_index[-1] < dest_index[over_dest_len-1]
-                         or (over._dest_index[-1] == dest_index[over_dest_len-1]
-                             and over._prec > self.prec)):
+            if not dest_moved and over_dest_len <= my_dest_len and over._dest_index[:-1] == dest_index[over_dest_len-1] \
+                    and (over._dest_index[-1] < src_index[over_dest_len-1] or (over._dest_index[-1] == src_index[over_dest_len-1] and over._prec > self._prec)):
                 dest_index[over_dest_len-1] += 1
+
+            # import pdb, pprint
+            # pprint.PrettyPrinter().pprint(("Move", self.__dict__, over.__dict__, (src_index, dest_index)))
+            # pdb.set_trace()
+
         return Move(end_node, self._prec, src_index, dest_index)
 
     @property
