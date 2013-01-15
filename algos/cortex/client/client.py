@@ -21,10 +21,21 @@ class Client:
         self._value = init.initial_value
         self._tip = self._root = ClientNode(server_state=init.initial_state,
                                             local_state=0)
+
+        
+        self._dbg_oldest_root = self._root
+        self._dbg_oldest_val = self._value.clone_tree()
+
         self._local_change_q = []
         self._send_change_cb = send_change_cb
         self._pending_ack = False
         self._prec = init.precedence
+
+    def dbg_try_all(self):
+        self._dbg_oldest_root.dbg_try_all_paths(self._dbg_oldest_val)
+    def dbg_dump_old_csv(self):
+        self._dbg_oldest_root.dump_csv()
+    
 
     @property
     def value(self):
@@ -76,7 +87,6 @@ class Client:
         self._tip = transformed_op.end
         if self._root is old_tip:
             self._root = self._tip
-        
     
     def apply_server_ack(self, ack):
         """Move the root so to forget about unneeded history objects
