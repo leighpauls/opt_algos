@@ -23,6 +23,14 @@ class Server:
         self.root.append_state_axis(Server.SERVER_HIDDEN_ID)
         self.value = initial_value.clone_tree() if initial_value is not None else ValueNode()
 
+        self._debug_trans_history = []
+
+
+    def dump_csv(self):
+        with open("node_dump.csv", "w") as f:
+            for row in self._debug_trans_history:
+                f.write("\t".join(row) + "\n")
+
     def _apply_change(self, change, remote_id):
         """Apply the change provided to the server state,
         then tell all of the remotes about it
@@ -35,7 +43,7 @@ class Server:
         source_operation = Operation.from_change(change, None)
 
         # transform down to the tip
-        new_tip_operation = source_node.transform_to_tip(source_operation, remote_id)
+        new_tip_operation = source_node.transform_to_tip(source_operation, remote_id, self._debug_trans_history)
         new_tip_operation.apply(self.value)
         new_tip = new_tip_operation.end
         

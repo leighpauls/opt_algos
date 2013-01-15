@@ -14,6 +14,9 @@ class State:
             self._val = {}
             self._birth_state = 0
 
+    def get_birth_state(self):
+        return self._birth_state
+
     def append_state_axis(self, axis):
         """Add a new axis to this State Object"""
         if axis in self._val:

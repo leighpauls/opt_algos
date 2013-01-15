@@ -34,7 +34,10 @@ class ServerNode:
             cur_node = cur_node.operation.end
         return cur_node
 
-    def transform_to_tip(self, source_operation, remote_id):
+    def to_csv_cell(self):
+        return str(self.pos.get_birth_state())
+
+    def transform_to_tip(self, source_operation, remote_id, debug_xform_record = None):
         """Transforms the operation from this node to the tip, then uses it to make a new tip
         Params:
         source_operation -- an operation whose source is this node
@@ -44,11 +47,25 @@ class ServerNode:
         """
         cur_node = self
         transformed_op = source_operation
+
+        debug_top_row = [self.to_csv_cell()]
+        debug_lower_row = [transformed_op.to_csv_cell()]
         while cur_node.operation is not None:
+            debug_top_row.append(cur_node.operation.to_csv_cell())
+            debug_lower_row.append("")
+
             transformed_op = transformed_op.transform(
                 end_node=None,
                 over=cur_node.operation)
             cur_node = cur_node.operation.end
+
+            debug_top_row.append(cur_node.to_csv_cell())
+            debug_lower_row.append(transformed_op.to_csv_cell())
+
+        debug_xform_record.append(debug_top_row)
+        debug_xform_record.append(debug_lower_row)
+        debug_xform_record.append([])
+
         # cur_node is now the tip
         transformed_op.end = ServerNode(cur_node)
         transformed_op.end.pos.increment_state(remote_id)
