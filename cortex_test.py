@@ -108,11 +108,15 @@ def do_random_operation(client):
     class InvalidIndex(Exception):pass
     
     root_node = client._value
-    def get_random_tree_idx(isCreation, isRemoval=False):
+    def get_random_tree_idx(isCreation, isRemoval=False, move_src=None):
         cur_idx = []
         cur_node = root_node
         while len(cur_node.children) > 0 and random.choice([True, False]):
-            cur_idx.append(random.randint(0, len(cur_node.children)-1))
+            if move_src is not None \
+                    and move_src[:-1] == cur_idx[:-1]:
+                cur_idx.append(random.randint(0, len(cur_node.children)-2))
+            else:
+                cur_idx.append(random.randint(0, len(cur_node.children)-1))
             assert(cur_idx[-1] >= 0)
             cur_node = cur_node.children[cur_idx[-1]]
 
@@ -121,6 +125,7 @@ def do_random_operation(client):
 
         if isRemoval and cur_idx == []:
             raise InvalidIndex()
+
         assert(len(cur_idx) == 0 or cur_idx[-1] >= 0)
         return cur_idx
 
@@ -174,7 +179,7 @@ def do_random_operation(client):
             except InvalidIndex:
                 completed = False
                 continue
-            dest_idx = get_random_tree_idx(True)
+            dest_idx = get_random_tree_idx(True, False, src_idx)
             if len(src_idx) <= len(dest_idx) and src_idx == dest_idx[:len(src_idx)]:
                 completed = False
                 continue
