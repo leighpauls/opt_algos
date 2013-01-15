@@ -25,15 +25,21 @@ class ValueNode:
         return self._children[child_index]
 
     def insert_value(self, linear_index, value):
+        if linear_index > len(self._value):
+            raise Exception("Tried to insert value past the end of the array")
         self._value.insert(linear_index, value)
 
     def delete_value(self, linear_index):
         self._value.pop(linear_index)
 
     def create_child(self, child_index):
+        if child_index > len(self._children):
+            raise Exception("Tried to create child past the end of the array")
         self._children.insert(child_index, ValueNode())
     
     def insert_child(self, child_index, child):
+        if child_index > len(self._children):
+            raise Exception("Tried to insert child past the end of the array")
         if child is self:
             raise Exception("Tried to add self as child")
         self._children.insert(child_index, child)
