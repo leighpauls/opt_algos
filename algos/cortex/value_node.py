@@ -4,6 +4,14 @@ class ValueNode:
         self._value = value if value is not None else []
         self._children = children if children is not None else []
 
+    def is_equal(self, other):
+        if self._value != other._value or len(self._children) != len(other._children):
+            return False
+        for i in xrange(len(self._children)):
+            if not self._children[i].is_equal(other._children[i]):
+                return False
+        return True
+
     # TODO: remove these debug properties
     @property
     def children(self):

@@ -37,6 +37,8 @@ class Client:
         self._dbg_oldest_root.dump_csv()
     def do_debug(self):
         self.dbg_dump_old_csv()
+        self._dbg_oldest_root.dbg_verify_all_xforms(
+            self._dbg_oldest_val, self._tip._server_state+1, self._tip._local_state+1)
         self.dbg_try_all()
 
     @property
@@ -83,7 +85,10 @@ class Client:
             root=self._root)
 
         # apply the transformed operation locally
-        transformed_op.apply(self._value)
+        try:
+            transformed_op.apply(self._value)
+        except:
+            self.do_debug()
 
         old_tip = self._tip
         self._tip = transformed_op.end

@@ -172,6 +172,63 @@ class ClientNode:
                 str(self._server_state) + ", " + str(self._local_state) + ")"
             raise
 
+    def dbg_verify_all_xforms(self, initial_value, server_age, local_age):
+        """Evaluate every graph square to verify every xform pair"""
+        evaluated = []
+        for _ in xrange(server_age+1):
+            new_col = []
+            evaluated.append(new_col)
+            for _ in xrange(local_age+1):
+                new_col.append(None)
+        evaluated[0][0] = initial_value.clone_tree()
+        
+        cur_server_state = 0
+        cur_local_state = 0
+        next_ss_start = 0
+        cur_node = None
+        next_row_node = self
+
+        while next_ss_start is not None:
+            cur_server_state = next_ss_start
+            next_ss_start = None
+            cur_node = next_row_node
+            next_row_node = None
+            
+            done = False
+            while not done:
+
+                if cur_node.local_op is not None:
+                    if next_ss_start is None:
+                        next_ss_start = cur_server_state
+                        next_row_node = cur_node.local_op.end
+
+                    value_copy = evaluated[cur_server_state][cur_local_state].clone_tree()
+                    cur_node.local_op.apply(value_copy)
+                    if evaluated[cur_server_state][cur_local_state+1] is None:
+                        evaluated[cur_server_state][cur_local_state+1] = value_copy
+                    elif not evaluated[cur_server_state][cur_local_state+1].is_equal(value_copy):
+                        raise Exception("Local op does not converge from (" 
+                                        + str(cur_server_state) + ", " + str(cur_local_state) + ")")
+
+                if cur_node.server_op is not None:
+                    value_copy = evaluated[cur_server_state][cur_local_state].clone_tree()
+                    cur_node.server_op.apply(value_copy)
+                    if evaluated[cur_server_state+1][cur_local_state] is None:
+                        evaluated[cur_server_state+1][cur_local_state] = value_copy
+                    elif not evaluated[cur_server_state+1][cur_local_state].is_equal(value_copy):
+                        print evaluated[cur_server_state+1][cur_local_state].__dict__
+                        print value_copy.__dict__
+                        raise Exception("Server op does not converge from (" 
+                                        + str(cur_server_state) + ", " + str(cur_local_state) + ")")
+                    cur_node = cur_node.server_op.end
+                    cur_server_state += 1
+                else:
+                    done = True
+
+
+            cur_local_state += 1
+        print "Verified all xform pairs"
+            
 
     def dump_csv(self):
         with open("node_dump.csv", "w") as f:
