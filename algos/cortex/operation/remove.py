@@ -27,6 +27,7 @@ class Remove(Tree):
     def transform(self, over, end_node):
         from create import Create
         from move import Move
+        from no_op import NoOp
         
         index = self._index[:]
         if not isinstance(over, Tree):
@@ -42,7 +43,7 @@ class Remove(Tree):
             over_len = len(over._index)
             if over_len <= len(index) and over._index[:-1] == index[:over_len-1]:
                 if over._index[-1] == index[over_len-1]:
-                    return Operation.NoOp(end_node, self.prec)
+                    return NoOp(end_node, self.prec)
                 elif over._index[-1] < index[over_len-1]:
                     index[over_len-1] -= 1
 

@@ -19,8 +19,7 @@ class Move(Tree):
     def apply(self, value_root):
         temp = Tree._navigate_to_index_parent(self._index, value_root).pop_child(self._index[-1])
         dest_parent = Tree._navigate_to_index_parent(self._dest_index, value_root)
-        dest_parent.insert_child(
-            self._dest_index[-1], temp)
+        dest_parent.insert_child(self._dest_index[-1], temp)
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]
@@ -61,27 +60,20 @@ class Move(Tree):
                     and (over._index[-1] < dest_index[over_len-1]
                          or (over._index[-1] == dest_index[over_len-1] and over._prec > self.prec)):
                 dest_index[over_len-1] += 1
-            # import pdb, pprint
-            # pprint.PrettyPrinter().pprint(("Create", self.__dict__, over.__dict__, (src_index, dest_index)))
-            # pdb.set_trace()
 
         elif isinstance(over, Remove):
             over_len = len(over._index)
             if over_len <= len(src_index) and over._index[:-1] == src_index[:over_len-1]:
                 if over._index[-1] == src_index[over_len-1]:
-                    # import pdb, pprint
-                    # pprint.PrettyPrinter().pprint((self.__dict__, over.__dict__, "NOOP!!!!!!!!!!!!!!!!!!"))
-                    # pdb.set_trace()
                     return NoOp(end_node, self._prec)
                 elif over._index[-1] < src_index[over_len-1]:
                     src_index[over_len-1] -= 1
 
-            if over_len <= len(dest_index) and over._index[:-1] == dest_index[:over_len-1] \
-                    and over._index[-1] < dest_index[over_len-1]:
-                dest_index[over_len-1] -= 1
-            # import pdb, pprint
-            # pprint.PrettyPrinter().pprint(("Remove", self.__dict__, over.__dict__, (src_index, dest_index)))
-            # pdb.set_trace()
+            if over_len <= len(dest_index) and over._index[:-1] == dest_index[:over_len-1]:
+                if over._index[-1] == dest_index[over_len-1]:
+                    return Remove(end_node, self._prec, src_index)
+                elif over._index[-1] < dest_index[over_len-1]:
+                    dest_index[over_len-1] -= 1
 
 
         elif isinstance(over, Move):
@@ -104,7 +96,7 @@ class Move(Tree):
 
             dest_moved = False
             if over_src_len <= my_dest_len and over._index[:-1] == dest_index[:over_src_len-1]:
-                if over._index[-1] == dest_index[-1] and over_src_len > my_dest_len:
+                if over._index[-1] == dest_index[over_src_len-1] and over_src_len < my_dest_len:
                     dest_moved = True
                     dest_index[:over_src_len] = over._dest_index
                 elif over._index[-1] < dest_index[over_src_len-1]:
@@ -112,10 +104,6 @@ class Move(Tree):
             if not dest_moved and over_dest_len <= my_dest_len and over._dest_index[:-1] == dest_index[over_dest_len-1] \
                     and (over._dest_index[-1] < src_index[over_dest_len-1] or (over._dest_index[-1] == src_index[over_dest_len-1] and over._prec > self._prec)):
                 dest_index[over_dest_len-1] += 1
-
-            # import pdb, pprint
-            # pprint.PrettyPrinter().pprint(("Move", self.__dict__, over.__dict__, (src_index, dest_index)))
-            # pdb.set_trace()
 
         return Move(end_node, self._prec, src_index, dest_index)
 
