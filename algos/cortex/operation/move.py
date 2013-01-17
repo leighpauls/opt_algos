@@ -11,10 +11,9 @@ class Move(Tree):
     OP_NAME="MOVE"
     
     def __init__(self, end_node, prec, index, dest_index):
-        Tree.__init__(self, end_node, prec, index)
+        Tree.__init__(self, end_node, prec)
+        self._index = index
         self._dest_index = dest_index
-        if len(self._index) < len(self._dest_index) and self._index == self._dest_index[:len(self._index)]:
-            raise Exception("Tried to move node under it's self")
 
     def apply(self, value_root):
         temp = Tree._navigate_to_index_parent(self._index, value_root).pop_child(self._index[-1])
@@ -47,6 +46,14 @@ class Move(Tree):
 
         src_index = self._index[:]
         dest_index = self._dest_index[:]
+
+        effective_dest = dest_index[:]
+        src_len = len(src_index)
+        if src_len <= len(effective_dest) \
+                and src_index[:-1] == effective_dest[:src_len-1] \
+                and src_index[-1] < effective_dest[src_len-1]:
+            effective_dest[src_len-1] += 1
+
         if not isinstance(over, Tree):
             pass
 
@@ -56,31 +63,39 @@ class Move(Tree):
                     and over._index[-1] <= src_index[over_len-1]:
                 src_index[over_len-1] += 1
 
-            if over_len <= len(dest_index) and over._index[:-1] == dest_index[:over_len-1] \
-                    and (over._index[-1] < dest_index[over_len-1]
-                         or (over._index[-1] == dest_index[over_len-1] and over._prec > self.prec)):
+            if over_len <= len(effective_dest) and over._index[:-1] == effective_dest[:over_len-1] \
+                    and (over._index[-1] < effective_dest[over_len-1]
+                         or (over._index[-1] == effective_dest[over_len-1] and over._prec > self.prec)
+                         or (over_len < len(effective_dest) and over._index[-1] <= effective_dest[over_len-1])):
                 dest_index[over_len-1] += 1
 
         elif isinstance(over, Remove):
-            over_len = len(over._index)
-            if over_len <= len(src_index) and over._index[:-1] == src_index[:over_len-1]:
-                if over._index[-1] == src_index[over_len-1]:
+            become_remove_source = False
+            
+            for over_idx in over._index_list:
+                over_len = len(over_idx)
+                if len(over_idx) <= len(self._index) and over_idx == self._index[:over_len]:
                     return NoOp(end_node, self._prec)
-                elif over._index[-1] < src_index[over_len-1]:
-                    src_index[over_len-1] -= 1
 
-            if over_len <= len(dest_index) and over._index[:-1] == dest_index[:over_len-1]:
-                if over._index[-1] == dest_index[over_len-1]:
-                    return Remove(end_node, self._prec, src_index)
-                elif over._index[-1] < dest_index[over_len-1]:
+                elif len(over_idx) < len(effective_dest) and over_idx == effective_dest[:over_len]:
+                    become_remove_source = True
+
+                if len(over_idx) <= len(self._index) and over_idx[:-1] == self._index[:over_len-1] \
+                        and over_idx[-1] < self._index[over_len-1]:
+                    src_index[over_len-1] -= 1
+                if len(over_idx) <= len(effective_dest) and over_idx[:-1] == effective_dest[:over_len-1] \
+                        and over_idx[-1] < effective_dest[over_len-1]:
                     dest_index[over_len-1] -= 1
 
+            if become_remove_source:
+                return Remove(end_node, self._prec, src_index)
+                
 
         elif isinstance(over, Move):
             over_src_len = len(over._index)
             over_dest_len = len(over._dest_index)
             my_src_len = len(src_index)
-            my_dest_len = len(dest_index)
+            my_dest_len = len(effective_dest)
             
             # move my src idx
             src_moved = False
@@ -95,14 +110,16 @@ class Move(Tree):
                 src_index[over_dest_len-1] += 1
 
             dest_moved = False
-            if over_src_len <= my_dest_len and over._index[:-1] == dest_index[:over_src_len-1]:
-                if over._index[-1] == dest_index[over_src_len-1] and over_src_len < my_dest_len:
+            if over_src_len <= my_dest_len and over._index[:-1] == effective_dest[:over_src_len-1]:
+                if over._index[-1] == effective_dest[over_src_len-1] and over_src_len < my_dest_len:
                     dest_moved = True
                     dest_index[:over_src_len] = over._dest_index
-                elif over._index[-1] < dest_index[over_src_len-1]:
+                elif over._index[-1] < effective_dest[over_src_len-1]:
                     dest_index[over_src_len-1] -= 1
-            if not dest_moved and over_dest_len <= my_dest_len and over._dest_index[:-1] == dest_index[over_dest_len-1] \
-                    and (over._dest_index[-1] < src_index[over_dest_len-1] or (over._dest_index[-1] == src_index[over_dest_len-1] and over._prec > self._prec)):
+            if not dest_moved and over_dest_len <= my_dest_len and over._dest_index[:-1] == effective_dest[:over_dest_len-1] \
+                    and (over._dest_index[-1] < effective_dest[over_dest_len-1]
+                         or (over._dest_index[-1] == effective_dest[over_dest_len-1] and over._prec > self._prec)
+                         or (len(over._dest_index) < len(effective_dest) and over._dest_index[-1] <= effective_dest[over_dest_len-1])):
                 dest_index[over_dest_len-1] += 1
 
         return Move(end_node, self._prec, src_index, dest_index)
@@ -110,6 +127,10 @@ class Move(Tree):
     @property
     def dest_tree_index(self):
         return self._dest_index
+
+    @property
+    def tree_index(self):
+        return self._index
 
     def to_csv_cell(self):
         return "MOV " + str(self._index) + " to " + str(self._dest_index) + " p" + str(self._prec)

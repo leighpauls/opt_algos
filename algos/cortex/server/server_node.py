@@ -91,7 +91,8 @@ class ServerNode:
             dest_tree_index=self.operation.dest_tree_index,
             linear_index=self.operation.linear_index,
             val=self.operation.val,
-            precedence=self.operation.prec)
+            precedence=self.operation.prec,
+            index_list=self.operation.index_list)
 
     def get_rel_server_state(self, remote_id):
         return self.pos.get_relative_state(remote_id)

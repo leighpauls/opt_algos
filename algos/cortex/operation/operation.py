@@ -34,7 +34,8 @@ class Operation(object):
         elif change.op == Remove.OP_NAME:
             return Remove(end_node=end_node,
                           prec=change.prec,
-                          index=change.tree_index)
+                          index=None,
+                          index_list=change.index_list)
         elif change.op == Move.OP_NAME:
             return Move(end_node=end_node,
                         prec=change.prec,
@@ -73,6 +74,8 @@ class Operation(object):
     @property
     def linear_index(self):
         return None
-
+    @property
+    def index_list(self):
+        return None
     
 

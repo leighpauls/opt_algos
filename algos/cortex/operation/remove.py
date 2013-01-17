@@ -5,64 +5,114 @@ class Remove(Tree):
 
     OP_NAME="REMOVE"
     
-    def __init__(self, end_node, prec, index):
-        Tree.__init__(self, end_node, prec, index)
+    def __init__(self, end_node, prec, index, index_list=None):
+        Tree.__init__(self, end_node, prec)
+        if index_list is None:
+            self._index_list = [index]
+        else:
+            self._index_list = index_list
+
+    @property
+    def index_list(self):
+        return self._index_list
 
     def apply(self, value_root):
-        node = Tree._navigate_to_index_parent(self._index, value_root)
-        node.pop_child(self._index[-1])
+        class Pair:
+            pass
+        remove_pairs = []
+        # build a pointer-based deletion reference so sibling's can't screw with eachother's indicies
+        for index in self._index_list:
+            pair = Pair();
+            pair.parent = Tree._navigate_to_index_parent(index, value_root)
+            pair.child = pair.parent.get_child(index[-1])
+            remove_pairs.append(pair)
+        for pair in remove_pairs:
+            pair.parent.remove_child(pair.child)
+            
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]
-        self_len = len(self._index)
-        if len(old_index) < self_len:
-            return res
-        if self._index[:-1] == res[:self_len-1]:
-            if self._index[-1] == res[self_len-1]:
-                return None
-            elif self._index[-1] < res[self_len-1]:
-                res[self_len-1] -= 1
+        for index in self._index_list:
+            self_len = len(index)
+            if len(res) >= self_len and index[:-1] == res[:self_len-1]:
+                if index[-1] == res[self_len-1]:
+                    return None
+                elif index[-1] < res[self_len-1]:
+                    res[self_len-1] -= 1
         return res
 
     def transform(self, over, end_node):
         from create import Create
         from move import Move
-        from no_op import NoOp
         
-        index = self._index[:]
+        index_list = []
+        for idx in self._index_list:
+            index_list.append(idx[:])
+
         if not isinstance(over, Tree):
             pass
 
         elif isinstance(over, Create):
             over_len = len(over._index)
-            if over_len <= len(index) and over._index[:-1] == index[:over_len-1] \
-                    and over._index[-1] <= index[over_len-1]:
-                index[over_len-1] += 1
-
+            for idx in index_list:
+                if over_len <= len(idx) and over._index[:-1] == idx[:over_len-1] \
+                        and over._index[-1] <= idx[over_len-1]:
+                    idx[over_len-1] += 1
         elif isinstance(over, Remove):
-            over_len = len(over._index)
-            if over_len <= len(index) and over._index[:-1] == index[:over_len-1]:
-                if over._index[-1] == index[over_len-1]:
-                    return NoOp(end_node, self.prec)
-                elif over._index[-1] < index[over_len-1]:
-                    index[over_len-1] -= 1
+            for over_idx in over._index_list:
+                over_len = len(over_idx)
+                for idx in index_list:
+                    if over_len <= len(idx) and over_idx[:-1] == idx[:over_len-1]:
+                        if over_idx[-1] == idx[over_len-1]:
+                            index_list.remove(idx) 
+                        elif over_idx[-1] < idx[over_len-1]:
+                            idx[over_len-1] -= 1
 
         elif isinstance(over, Move):
+            # TODO: remove this whole implementation???
             src_len = len(over._index)
-            moved = False
-            if src_len <= len(index) and over._index[:-1] == index[:src_len-1]:
-                if over._index[-1] == index[src_len-1]:
-                    index[:src_len] = over._dest_index
-                    moved = True
-                elif over._index[-1] < index[src_len-1]:
-                    index[src_len-1] -= 1
-
             dest_len = len(over._dest_index)
-            if not moved and dest_len <= len(index) and over._dest_index[:-1] == index[:dest_len-1] \
-                    and over._dest_index[-1] <= index[dest_len-1]:
-                index[dest_len-1] += 1
 
-        return Remove(end_node, self._prec, index)
+            for i in xrange(len(index_list)):
+                idx = index_list[i]
+                idx_len = len(idx)
+                
+                # removing child of source or source?
+                if src_len <= idx_len and over._index == idx[:src_len]:
+                    idx[:src_len] = over._dest_index
+                # removing parent of source?
+                elif src_len > idx_len and over._index[:idx_len] == idx:
+                    index_list.append(over._dest_index[:])
+                else:
+                    # removing sibling/child of move source?
+                    if src_len <= idx_len and over._index[:-1] == idx[:src_len-1] \
+                            and over._index[-1] < idx[src_len-1]:
+                        idx[src_len-1] -= 1
+                    # removing sibling/child of move dest?
+                    if dest_len <= idx_len and over._dest_index[:-1] == idx[:dest_len-1] \
+                            and over._dest_index[-1] <= idx[dest_len-1]:
+                        idx[dest_len-1] += 1
+
+        # remove redundant operations since they will cause errors
+        redundant = []
+        for i in xrange(len(index_list)):
+            idx = index_list[i]
+            if idx in redundant:
+                continue
+            for other_idx in index_list[i+1:]:
+                if other_idx not in redundant:
+                    if len(idx) <= len(other_idx) and idx == other_idx[:len(idx)]:
+                        redundant.append(other_idx)
+                    elif len(idx) > len(other_idx) and idx[:len(other_idx)] == other_idx:
+                        redundant.append(idx)
+                        break
+        for r in redundant:
+            index_list.remove(redundant)
+        
+                    
+                    
+        return Remove(end_node, self._prec, index=None, index_list=index_list)
 
     def to_csv_cell(self):
-        return "REM " + str(self._index) + " p" + str(self._prec)
+        return ("REM " + str(self._index_list) + " p" + str(self._prec)) \
+            .replace('[[', '[[[[').replace(']]', ']]]]')

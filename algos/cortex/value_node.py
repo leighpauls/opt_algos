@@ -47,6 +47,9 @@ class ValueNode:
     def pop_child(self, child_index):
         return self._children.pop(child_index)
 
+    def remove_child(self, child_node):
+        self._children.remove(child_node)
+
     def clone_tree(self):
         new_children = [child.clone_tree() for child in self._children]
         new_value = self._value[:]

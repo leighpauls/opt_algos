@@ -115,13 +115,20 @@ def do_random_operation(client):
             if move_src is not None \
                     and move_src[:-1] == cur_idx[:-1]:
                 cur_idx.append(random.randint(0, len(cur_node.children)-2))
+                effective_next = cur_idx[-1]
+                if effective_next >= move_src[-1]:
+                    effective_next += 1
             else:
                 cur_idx.append(random.randint(0, len(cur_node.children)-1))
+                effective_next = cur_idx[-1]
             assert(cur_idx[-1] >= 0)
-            cur_node = cur_node.children[cur_idx[-1]]
+            cur_node = cur_node.children[effective_next]
 
         if isCreation:
-            cur_idx.append(random.randint(0, len(cur_node.children)))
+            if move_src is not None and move_src[:-1] == cur_idx:
+                cur_idx.append(random.randint(0, len(cur_node.children)-1))
+            else:
+                cur_idx.append(random.randint(0, len(cur_node.children)))
 
         if isRemoval and cur_idx == []:
             raise InvalidIndex()
@@ -180,9 +187,6 @@ def do_random_operation(client):
                 completed = False
                 continue
             dest_idx = get_random_tree_idx(True, False, src_idx)
-            if len(src_idx) <= len(dest_idx) and src_idx == dest_idx[:len(src_idx)]:
-                completed = False
-                continue
             client.apply_local_change(Move, src_idx, dest_idx)
 
         else:

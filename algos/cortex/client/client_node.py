@@ -153,19 +153,25 @@ class ClientNode:
     def dbg_try_all_paths(self, initial_value):
         """Recursively tries every operation path, to find logical xform errors"""
         try:
-            if self.server_op is not None:
-                server_copy = initial_value.clone_tree()
-                self.server_op.apply(server_copy)
-                self.server_op.end.dbg_try_all_paths(server_copy)
-
             if self.local_op is not None:
                 local_copy = initial_value.clone_tree()
                 self.local_op.apply(local_copy)
                 self.local_op.end.dbg_try_all_paths(local_copy)
         except Exception:
-            print "from (" + \
+            print "local (" + \
                 str(self._server_state) + ", " + str(self._local_state) + ")"
             raise
+
+        try:
+            if self.server_op is not None:
+                server_copy = initial_value.clone_tree()
+                self.server_op.apply(server_copy)
+                self.server_op.end.dbg_try_all_paths(server_copy)
+        except Exception:
+            print "srver (" + \
+                str(self._server_state) + ", " + str(self._local_state) + ")"
+            raise
+
 
     def dump_csv(self):
         with open("node_dump.csv", "w") as f:
@@ -174,6 +180,7 @@ class ClientNode:
             y = 0
             next_row_start = 0
             next_row_node = self
+            passed = []
 
             while next_row_node is not None:
                 cur_row = []

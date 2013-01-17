@@ -17,7 +17,8 @@ class Change:
                  dest_tree_index,
                  linear_index,
                  val,
-                 precedence):
+                 precedence,
+                 index_list):
         self.src_client_state = src_client_state
         self.src_rel_server_state = src_rel_server_state
         self.op = op
@@ -26,4 +27,5 @@ class Change:
         self.linear_index = linear_index
         self.val = val
         self.prec = precedence
+        self.index_list = index_list
         

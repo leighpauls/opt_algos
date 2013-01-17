@@ -127,7 +127,8 @@ class Client:
                             dest_tree_index=self._root.local_op.dest_tree_index,
                             linear_index=self._root.local_op.linear_index,
                             val=self._root.local_op.val,
-                            precedence=self._prec)
+                            precedence=self._prec,
+                            index_list=self._root.local_op.index_list)
         self._pending_ack = True
         self._send_change_cb(new_change)
     
