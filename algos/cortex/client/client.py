@@ -35,7 +35,9 @@ class Client:
         self._dbg_oldest_root.dbg_try_all_paths(self._dbg_oldest_val)
     def dbg_dump_old_csv(self):
         self._dbg_oldest_root.dump_csv()
-    
+    def do_debug(self):
+        self.dbg_dump_old_csv()
+        self.dbg_try_all()
 
     @property
     def value(self):
