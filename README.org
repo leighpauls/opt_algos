@@ -1,0 +1,22 @@
+* OPT_ALGOS - Operational Transform Algorithms
+
+This project is a set of operational transform (OT) algorithm implementations.
+
+The primary purpose of this project is for the implementation of the Cortex Algorithim, which picks up on the research done by the Google Wave project on OT for a linear set of data and applies it to arbitrary structured acyclic tree-based data. An example of a structured acyclic tree-based data format is JSON.
+
+The problem that I'm interested in solving is that OT on anything more than the most simple of data formats is really difficult to get right. But once you've solved OT for your specific data needs, any work that someone does on one device is "just there" on another device. This is functionality that I want to see on any applications which have components on a mobile app and the web.
+
+My goal is to provide Cortex as a communication platform for web-based applications which handles all of the messiness of OT benieth the hood, and provide developers an interface to their OT'd data with a simple JSON-like structure.
+
+** What does OT do?
+OT is the technology behind things like Google Docs, which allows multiple people (or services) to all be editing the same document simulatiniously, and send updates on eachother's changes periodically, and have everyone's copy of that document resolve (gracefully) to the same end result no matter how hard the editors try to confilct each-other's changes.
+
+The core need for OT comes from the case: "I type a character at the end of a long document, while you delete 2 characters near the begining of the document. To resolve my changes on your workspace, you must decrease the index of my character's insertion by 2, but your changes can be applied directly to my workspace".
+
+See http://en.wikipedia.org/wiki/Operational_transformation for a longer and unnessisarily complex explaination of OT.
+
+** What does Cortex do differently?
+Almost all of the existing systems using OT use OT algorithms designed for linear data, eg a string/array of characters. The rest use application-specific formats and algorithms. I want a system which is sophisicated enought to represent tree-based data and appropriately resolve the challenges which come with tree based data. I don't, however, need to conform to some existing legacy standard of data, such as XML or JSON.
+
+For example, one editor should be able to move a subtree of the tree from one parent node to another, and another editor should be able to add and remove nodes within that subtree that the first was moving. Once the changes have been sent to eachother, both user's trees should resolve to have the subtree in it's new location, with the added and removed nodes applied appropriately to the subtree in it's new location. This example is not possible to resolve while maintaining the subtree under a linear-data OT algorithm.
+
