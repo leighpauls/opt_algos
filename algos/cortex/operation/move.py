@@ -39,6 +39,31 @@ class Move(Tree):
                 res[dest_idx_len-1] += 1
         return res
 
+    @staticmethod
+    def calc_effective_dest(src_idx, dest_idx):
+        effective_dest = dest_idx[:]
+        src_len = len(src_idx)
+        if src_len <= len(effective_dest) \
+                and src_idx[:-1] == effective_dest[:src_len-1] \
+                and (src_idx[-1] < effective_dest[src_len-1]
+                     or (src_idx[-1] <= effective_dest[src_len-1]
+                         and src_len < len(effective_dest))):
+            effective_dest[src_len-1] += 1
+        return effective_dest
+    
+    @staticmethod
+    def calc_operational_dest(own_src_idx, over_dest_idx):
+        operational_dest = over_dest_idx[:]
+        src_len = len(own_src_idx)
+        if src_len <= len(operational_dest) \
+                and own_src_idx[:-1] == operational_dest[:src_len-1] \
+                and (own_src_idx[-1] < operational_dest[src_len-1]
+                     or (own_src_idx[-1] <= operational_dest[src_len-1]
+                         and src_len < len(operational_dest))):
+            operational_dest[src_len-1] -= 1
+        return operational_dest
+        
+
     def transform(self, over, end_node):
         from create import Create
         from remove import Remove
@@ -47,17 +72,11 @@ class Move(Tree):
         src_index = self._index[:]
         dest_index = self._dest_index[:]
 
-        effective_dest = dest_index[:]
-        src_len = len(src_index)
-        if src_len <= len(effective_dest) \
-                and src_index[:-1] == effective_dest[:src_len-1] \
-                and src_index[-1] < effective_dest[src_len-1]:
-            effective_dest[src_len-1] += 1
-
         if not isinstance(over, Tree):
             pass
 
         elif isinstance(over, Create):
+            effective_dest = Move.calc_effective_dest(src_index, dest_index)
             over_len = len(over._index)
             if over_len <= len(src_index) and over._index[:-1] == src_index[:over_len-1] \
                     and over._index[-1] <= src_index[over_len-1]:
@@ -70,6 +89,8 @@ class Move(Tree):
                 dest_index[over_len-1] += 1
 
         elif isinstance(over, Remove):
+
+            effective_dest = Move.calc_effective_dest(src_index, dest_index)
             become_remove_source = False
             
             for over_idx in over._index_list:
@@ -95,8 +116,7 @@ class Move(Tree):
             over_src_len = len(over._index)
             over_dest_len = len(over._dest_index)
             my_src_len = len(src_index)
-            my_dest_len = len(effective_dest)
-            
+
             # move my src idx
             src_moved = False
             if over_src_len <= my_src_len and over._index[:-1] == src_index[:over_src_len-1]:
@@ -105,21 +125,27 @@ class Move(Tree):
                     src_index[:over_src_len] = over._dest_index
                 elif over._index[-1] < src_index[over_src_len-1]:
                     src_index[over_src_len-1] -= 1
-            if not src_moved and over_dest_len <= my_src_len and over._dest_index[:-1] == src_index[:over_dest_len-1] \
+            if not src_moved and over_dest_len <= my_src_len \
+                    and over._dest_index[:-1] == src_index[:over_dest_len-1] \
                     and over._dest_index[-1] <= src_index[over_dest_len-1]:
                 src_index[over_dest_len-1] += 1
+
+            effective_dest = Move.calc_effective_dest(src_index, dest_index)
+            my_dest_len = len(effective_dest)            
 
             dest_moved = False
             if over_src_len <= my_dest_len and over._index[:-1] == effective_dest[:over_src_len-1]:
                 if over._index[-1] == effective_dest[over_src_len-1] and over_src_len < my_dest_len:
                     dest_moved = True
-                    dest_index[:over_src_len] = over._dest_index
+                    dest_index[:over_src_len] = Move.calc_operational_dest(src_index, over._dest_index)
                 elif over._index[-1] < effective_dest[over_src_len-1]:
                     dest_index[over_src_len-1] -= 1
-            if not dest_moved and over_dest_len <= my_dest_len and over._dest_index[:-1] == effective_dest[:over_dest_len-1] \
+            if not dest_moved and over_dest_len <= my_dest_len \
+                    and over._dest_index[:-1] == effective_dest[:over_dest_len-1] \
                     and (over._dest_index[-1] < effective_dest[over_dest_len-1]
                          or (over._dest_index[-1] == effective_dest[over_dest_len-1] and over._prec > self._prec)
-                         or (len(over._dest_index) < len(effective_dest) and over._dest_index[-1] <= effective_dest[over_dest_len-1])):
+                         or (len(over._dest_index) < len(effective_dest)
+                             and over._dest_index[-1] <= effective_dest[over_dest_len-1])):
                 dest_index[over_dest_len-1] += 1
 
         return Move(end_node, self._prec, src_index, dest_index)

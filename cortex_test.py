@@ -194,8 +194,14 @@ def do_random_operation(client):
     
     return op_class
 
+def my_test():
+    """Place to put individual probing tests"""
+    server_op = Move(None, 2, [1], [1, 0])
+    local_op = Move(None, 3, [2], [4, 0])
+    server_op.transform(local_op, None)
+
 def main():
-    # simple_cortex_test()
+    # my_test()
     monte_carlo_test(0)
     # for i in xrange(0, 100):
     #    monte_carlo_test(i)
