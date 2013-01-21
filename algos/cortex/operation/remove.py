@@ -59,14 +59,22 @@ class Remove(Tree):
                         and over._index[-1] <= idx[over_len-1]:
                     idx[over_len-1] += 1
         elif isinstance(over, Remove):
+            # look for common/redundant duplicates
+            for over_idx in over._index_list:
+                over_len = len(over_idx)
+                for idx in index_list:
+                    if over_len <= len(idx) and over_idx == idx[:over_len]:
+                        index_list.remove(idx)
+
+            # sibling removal shifts
             for over_idx in over._index_list:
                 over_len = len(over_idx)
                 for idx in index_list:
                     if over_len <= len(idx) and over_idx[:-1] == idx[:over_len-1]:
-                        if over_idx[-1] == idx[over_len-1]:
-                            index_list.remove(idx) 
-                        elif over_idx[-1] < idx[over_len-1]:
+                        if over_idx[-1] < idx[over_len-1]:
                             idx[over_len-1] -= 1
+                        elif over_idx[-1] == idx[over_len-1]:
+                            raise Exception("Missed a removal redundancy")
 
         elif isinstance(over, Move):
             # TODO: remove this whole implementation???
