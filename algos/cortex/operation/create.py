@@ -55,7 +55,7 @@ class Create(Tree):
             src_len = len(over._index)
             moved = False
             if src_len <= len(index) and over._index[:-1] == index[:src_len-1]:
-                if over._index[-1] == index[src_len-1]:
+                if over._index[-1] == index[src_len-1] and src_len < len(index):
                     index[:src_len] = over._dest_index
                     moved = True
                 elif over._index[-1] < index[src_len-1]:
