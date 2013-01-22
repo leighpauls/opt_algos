@@ -52,6 +52,10 @@ class Create(Tree):
                         return NoOp(end_node, self._prec)
 
         elif isinstance(over, Move):
+            # TODO: hackey, make this case work implicitly
+            if over._index == over._dest_index:
+                return Create(end_node, self._prec, index)
+
             src_len = len(over._index)
             moved = False
             if src_len <= len(index) and over._index[:-1] == index[:src_len-1]:

@@ -114,8 +114,11 @@ class Move(Tree):
 
         elif isinstance(over, Move):
             # can't do an xform if we both try to move the same node, so use precedence and NoOp
-            if over._index == src_index and over._prec > self._prec:
+            if over._index == src_index:
+                if over._prec > self._prec:
                     return NoOp(end_node, self._prec)
+                else:
+                    return Move(end_node, self._prec, over._dest_index[:], dest_index)
 
             over_src_len = len(over._index)
             over_dest_len = len(over._dest_index)
@@ -144,10 +147,12 @@ class Move(Tree):
                     dest_index[:over_src_len] = Move.calc_operational_dest(src_index, over._dest_index)
                 elif over._index[-1] < effective_dest[over_src_len-1]:
                     dest_index[over_src_len-1] -= 1
+                    effective_dest[over_src_len-1] -= 1
+
             if not dest_moved and over_dest_len <= my_dest_len \
                     and over._dest_index[:-1] == effective_dest[:over_dest_len-1] \
                     and (over._dest_index[-1] < effective_dest[over_dest_len-1]
-                         or (over._dest_index[-1] == effective_dest[over_dest_len-1] and over._prec > self._prec)
+                         or (over._dest_index == effective_dest and over._prec > self._prec)
                          or (len(over._dest_index) < len(effective_dest)
                              and over._dest_index[-1] <= effective_dest[over_dest_len-1])):
                 dest_index[over_dest_len-1] += 1
