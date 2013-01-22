@@ -77,6 +77,8 @@ def simple_cortex_test():
     print client_1._value
     print client_2._value
 
+import random_cortex as rc
+
 def monte_carlo_test(seed):
     random.seed(seed)
 
@@ -90,121 +92,29 @@ def monte_carlo_test(seed):
     for i in xrange(num_cycles):
         for client in clients:
             num_ops = random.randint(0, 10)
-            ops_applied = []
             for _ in xrange(num_ops):
-                ops_applied.append(do_random_operation(client))
+                rc.do_random_op(client)
         buf.resolve_events()
 
-    reference_val = clients[0]
+    reference_val = clients[0].value
     for client in clients[1:]:
-        if not client == reference_val:
+        if not client.value.is_equal(reference_val):
             raise Exception("Client did not converge, seed: " + str(seed))
+    print seed, "worked"
 
-from algos.cortex.operation import Insert, Delete, Create, Remove, Move
-
-chars = [ chr(x) for x in xrange(ord('a'), ord('z')+1) ]
-operations = [Insert, Delete, Create, Remove, Move]
-def do_random_operation(client):
-    class InvalidIndex(Exception):pass
-    
-    root_node = client._value
-    def get_random_tree_idx(isCreation, isRemoval=False, move_src=None):
-        cur_idx = []
-        cur_node = root_node
-        while len(cur_node.children) > 0 and random.choice([True, False]):
-            if move_src is not None \
-                    and move_src[:-1] == cur_idx[:-1]:
-                cur_idx.append(random.randint(0, len(cur_node.children)-2))
-                effective_next = cur_idx[-1]
-                if effective_next >= move_src[-1]:
-                    effective_next += 1
-            else:
-                cur_idx.append(random.randint(0, len(cur_node.children)-1))
-                effective_next = cur_idx[-1]
-            assert(cur_idx[-1] >= 0)
-            cur_node = cur_node.children[effective_next]
-
-        if isCreation:
-            if move_src is not None and move_src[:-1] == cur_idx:
-                cur_idx.append(random.randint(0, len(cur_node.children)-1))
-            else:
-                cur_idx.append(random.randint(0, len(cur_node.children)))
-
-        if isRemoval and cur_idx == []:
-            raise InvalidIndex()
-
-        assert(len(cur_idx) == 0 or cur_idx[-1] >= 0)
-        return cur_idx
-
-    def get_random_linear_idx(tree_idx, isInsertion):
-        cur_node = root_node
-        for i in tree_idx:
-            cur_node = cur_node.children[i]
-
-        if isInsertion:
-            return random.randint(0, len(cur_node.value))
-        else:
-            if len(cur_node.value) == 0:
-                raise InvalidIndex()
-            return random.randint(0, len(cur_node.value)-1)
-        
-    completed = False
-    while not completed:
-        completed = True
-
-        op_class = random.choice(operations)
-        if op_class is Insert:
-            tree_idx = get_random_tree_idx(False)
-            linear_idx = get_random_linear_idx(tree_idx, True)
-            val = random.choice(chars)
-            client.apply_local_change(Insert, tree_idx, linear_idx, val)
-
-        elif op_class is Delete:
-            tree_idx = get_random_tree_idx(False)
-            try:
-                linear_idx = get_random_linear_idx(tree_idx, False)
-            except InvalidIndex:
-                completed = False
-                continue
-            client.apply_local_change(Delete, tree_idx, linear_idx)
-
-        elif op_class is Create:
-            tree_idx = get_random_tree_idx(True)
-            client.apply_local_change(Create, tree_idx)
-
-        elif op_class is Remove:
-            try:
-                tree_idx = get_random_tree_idx(False, True)
-            except InvalidIndex:
-                completed = False
-                continue
-            client.apply_local_change(Remove, tree_idx)
-
-        elif op_class is Move:
-            try:
-                src_idx = get_random_tree_idx(False, True)
-            except InvalidIndex:
-                completed = False
-                continue
-            dest_idx = get_random_tree_idx(True, False, src_idx)
-            client.apply_local_change(Move, src_idx, dest_idx)
-
-        else:
-            raise Exception("WTF: " + op_class.__name__)
-    
-    return op_class
+from algos.cortex.operation import Create, Remove, Move
 
 def my_test():
     """Place to put individual probing tests"""
-    server_op = Move(None, 2, [1], [1, 0])
-    local_op = Move(None, 3, [2], [4, 0])
+    server_op = Move(None, 5, [2], [0, 0])
+    local_op = Move(None, 4, [2], [3])
     server_op.transform(local_op, None)
 
 def main():
     # my_test()
     monte_carlo_test(0)
     # for i in xrange(0, 100):
-    #    monte_carlo_test(i)
+    #     monte_carlo_test(i)
 
 import sys
 if __name__ == "__main__":
