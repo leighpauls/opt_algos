@@ -17,7 +17,8 @@ class Delete(Value):
         # find the tree node to apply to
         tree_index = self._get_xformed_tree_index(over)
         if tree_index is None:
-            return Operation.NoOp(end_node)
+            from no_op import NoOp
+            return NoOp(end_node, self._prec)
 
         # find where in the value to apply the delete
         linear_index = self._linear_index

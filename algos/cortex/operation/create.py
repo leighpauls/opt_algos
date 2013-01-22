@@ -62,10 +62,12 @@ class Create(Tree):
                     index[src_len-1] -= 1
 
             dest_len = len(over._dest_index)
-            if not moved and dest_len <= len(index) and over._dest_index[:-1] == index[:dest_len-1] \
+            if not moved and dest_len <= len(index) \
+                    and over._dest_index[:-1] == index[:dest_len-1] \
                     and (over._dest_index[-1] < index[dest_len-1]
                          or (over._dest_index[-1] == index[dest_len-1]
-                             and over._prec > self.prec)):
+                             and (dest_len < len(index)
+                                  or over._prec > self.prec))):
                 index[dest_len-1] += 1
 
         return Create(end_node, self._prec, index)
