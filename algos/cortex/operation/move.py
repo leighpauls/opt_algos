@@ -62,7 +62,11 @@ class Move(Tree):
                          and src_len < len(operational_dest))):
             operational_dest[src_len-1] -= 1
         return operational_dest
-        
+    
+    @staticmethod
+    def is_child_of(parent_idx, child_idx):
+        """Returns true iff <parent_idx> is a parent of <child_idx>"""
+        return len(parent_idx) < len(child_idx) and parent_idx == child_idx[:len(parent_idx)]
 
     def transform(self, over, end_node):
         from create import Create
@@ -119,6 +123,16 @@ class Move(Tree):
                     return NoOp(end_node, self._prec)
                 else:
                     return Move(end_node, self._prec, over._dest_index[:], dest_index)
+
+            my_effective_dest = Move.calc_effective_dest(self._index, self._dest_index)
+            over_effective_dest = Move.calc_effective_dest(over._index, over._dest_index)
+            # TODO: HACK: undo cyclical dependencies
+            if Move.is_child_of(over._index, my_effective_dest) \
+                    and Move.is_child_of(self._index, over_effective_dest):
+                # just undo over's operation
+                src_index = over._dest_index[:]
+                dest_index = over._index[:]
+                return Move(end_node, self._prec, src_index, dest_index)
 
             over_src_len = len(over._index)
             over_dest_len = len(over._dest_index)

@@ -115,7 +115,7 @@ class Remove(Tree):
                         redundant.append(idx)
                         break
         for r in redundant:
-            index_list.remove(redundant)
+            index_list.remove(r)
         
                     
                     
