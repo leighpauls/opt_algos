@@ -88,10 +88,11 @@ class Remove(Tree):
                 # removing child of source or source?
                 if src_len <= idx_len and over._index == idx[:src_len]:
                     idx[:src_len] = over._dest_index
-                # removing parent of source?
-                elif src_len > idx_len and over._index[:idx_len] == idx:
-                    index_list.append(over._dest_index[:])
                 else:
+                    # removing parent of source?
+                    if src_len > idx_len and over._index[:idx_len] == idx:
+                        index_list.append(over._dest_index[:])
+
                     # removing sibling/child of move source?
                     if src_len <= idx_len and over._index[:-1] == idx[:src_len-1] \
                             and over._index[-1] < idx[src_len-1]:
