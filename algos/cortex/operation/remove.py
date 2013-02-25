@@ -31,15 +31,17 @@ class Remove(Tree):
             
 
     def _relocate_tree_index(self, old_index):
-        res = old_index[:]
-        for index in self._index_list:
-            self_len = len(index)
-            if len(res) >= self_len and index[:-1] == res[:self_len-1]:
-                if index[-1] == res[self_len-1]:
+        # see if the node was removed, and find index changes
+        new_index = old_index[:]
+        old_idx_len = len(old_index)
+        for removed_index in self._index_list:
+            removed_idx_len = len(removed_index)
+            if len(old_index) >= removed_idx_len and old_index[:removed_idx_len-1] == removed_index[:-1]:
+                if old_index[removed_idx_len-1] == removed_index[-1]:
                     return None
-                elif index[-1] < res[self_len-1]:
-                    res[self_len-1] -= 1
-        return res
+                elif old_index[removed_idx_len-1] >= removed_index[-1]:
+                    new_index[removed_idx_len-1] -= 1
+        return new_index
 
     def transform(self, over, end_node):
         from create import Create
