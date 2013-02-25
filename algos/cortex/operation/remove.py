@@ -67,14 +67,21 @@ class Remove(Tree):
                         index_list.remove(idx)
 
             # sibling removal shifts
-            for over_idx in over._index_list:
-                over_len = len(over_idx)
-                for idx in index_list:
-                    if over_len <= len(idx) and over_idx[:-1] == idx[:over_len-1]:
+            for idx in index_list:
+                # need to compare against the original idx, so save only the deltas
+                idx_len = len(idx)
+                index_deltas = [0] * idx_len
+                for over_idx in over._index_list:
+                    over_len = len(over_idx)
+                    if over_len <= idx_len and over_idx[:-1] == idx[:over_len-1]:
                         if over_idx[-1] < idx[over_len-1]:
-                            idx[over_len-1] -= 1
+                            index_deltas[over_len-1] -= 1
                         elif over_idx[-1] == idx[over_len-1]:
                             raise Exception("Missed a removal redundancy")
+                # apply the deltas
+                for i in xrange(idx_len):
+                    idx[i] += index_deltas[i]
+
 
         elif isinstance(over, Move):
             # TODO: remove this whole implementation???
