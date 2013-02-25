@@ -100,21 +100,22 @@ def monte_carlo_test(seed):
     for client in clients[1:]:
         if not client.value.is_equal(reference_val):
             raise Exception("Client did not converge, seed: " + str(seed))
-    print seed, "worked"
+    print seed, "worked with", len(clients), "clients"
 
 from algos.cortex.operation import Create, Remove, Move
 
 def my_test():
     """Place to put individual probing tests"""
-    server_op = Move(None, 5, [2], [0, 0])
-    local_op = Move(None, 4, [2], [3])
-    server_op.transform(local_op, None)
+    local_op = Remove(None, 3, index=None, index_list=[[0], [3]])
+    server_op = Remove(None, 4, index=None, index_list=[[4, 0, 0]])
+    xformed = server_op.transform(local_op, None)
+    print xformed.to_csv_cell()
 
 def main():
     # my_test()
-    monte_carlo_test(0)
-    # for i in xrange(0, 100):
-    #     monte_carlo_test(i)
+    # monte_carlo_test(0)
+    for i in xrange(0, 100):
+        monte_carlo_test(i)
 
 import sys
 if __name__ == "__main__":
