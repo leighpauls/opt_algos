@@ -87,7 +87,8 @@ class Client:
         # apply the transformed operation locally
         try:
             transformed_op.apply(self._value)
-        except:
+        except Exception as e:
+            print "Going to debug because:", e
             self.do_debug()
 
         old_tip = self._tip
