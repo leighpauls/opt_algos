@@ -132,6 +132,12 @@ class Move(Tree):
                     and over._index[-1] == dest_index[-1]:
                 return NoOp(end_node, self._prec)
 
+            # HACK: don't try to xform over/with a pointless move, it just makes the logic suck
+            if over._index == over._dest_index:
+                return Move(end_node, self._prec, src_index, dest_index)
+            if src_index == dest_index:
+                return NoOp(end_node, self._prec)
+
             my_effective_dest = Move.calc_effective_dest(self._index, self._dest_index)
             over_effective_dest = Move.calc_effective_dest(over._index, over._dest_index)
             # TODO: HACK: undo cyclical dependencies
@@ -159,24 +165,23 @@ class Move(Tree):
                     and over._dest_index[-1] <= src_index[over_dest_len-1]:
                 src_index[over_dest_len-1] += 1
 
-            effective_dest = Move.calc_effective_dest(src_index, dest_index)
-            my_dest_len = len(effective_dest)            
+            my_dest_len = len(my_effective_dest)            
 
             dest_moved = False
-            if over_src_len <= my_dest_len and over._index[:-1] == effective_dest[:over_src_len-1]:
-                if over._index[-1] == effective_dest[over_src_len-1] and over_src_len < my_dest_len:
+            if over_src_len <= my_dest_len and over._index[:-1] == my_effective_dest[:over_src_len-1]:
+                if over._index[-1] == my_effective_dest[over_src_len-1] and over_src_len < my_dest_len:
                     dest_moved = True
                     dest_index[:over_src_len] = Move.calc_operational_dest(src_index, over._dest_index)
-                elif over._index[-1] < effective_dest[over_src_len-1]:
+                elif over._index[-1] < my_effective_dest[over_src_len-1]:
                     dest_index[over_src_len-1] -= 1
-                    effective_dest[over_src_len-1] -= 1
+                    my_effective_dest[over_src_len-1] -= 1
 
             if not dest_moved and over_dest_len <= my_dest_len \
-                    and over._dest_index[:-1] == effective_dest[:over_dest_len-1] \
-                    and (over._dest_index[-1] < effective_dest[over_dest_len-1]
-                         or (over._dest_index == effective_dest and over._prec > self._prec)
-                         or (len(over._dest_index) < len(effective_dest)
-                             and over._dest_index[-1] <= effective_dest[over_dest_len-1])):
+                    and over._dest_index[:-1] == my_effective_dest[:over_dest_len-1] \
+                    and (over._dest_index[-1] < my_effective_dest[over_dest_len-1]
+                         or (over._dest_index == my_effective_dest and over._prec > self._prec)
+                         or (len(over._dest_index) < len(my_effective_dest)
+                             and over._dest_index[-1] <= my_effective_dest[over_dest_len-1])):
                 dest_index[over_dest_len-1] += 1
 
         return Move(end_node, self._prec, src_index, dest_index)
