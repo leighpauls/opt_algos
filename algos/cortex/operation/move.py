@@ -124,6 +124,14 @@ class Move(Tree):
                 else:
                     return Move(end_node, self._prec, over._dest_index[:], dest_index)
 
+            # TODO: is there a more general case to be handled here?
+            # check for an immediate neighbor swap
+            if src_index[:-1] == over._index[:-1] \
+                    == dest_index[:-1] == over._dest_index[:-1] \
+                    and src_index[-1] == over._dest_index[-1] \
+                    and over._index[-1] == dest_index[-1]:
+                return NoOp(end_node, self._prec)
+
             my_effective_dest = Move.calc_effective_dest(self._index, self._dest_index)
             over_effective_dest = Move.calc_effective_dest(over._index, over._dest_index)
             # TODO: HACK: undo cyclical dependencies
