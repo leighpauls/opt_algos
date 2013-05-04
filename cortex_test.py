@@ -106,15 +106,15 @@ from algos.cortex.operation import Create, Remove, Move
 
 def my_test():
     """Place to put individual probing tests"""
-    local_op = Remove(None, 3, index=None, index_list=[[0], [3]])
-    server_op = Remove(None, 4, index=None, index_list=[[4, 0, 0]])
+    local_op = Move(None, 2, index=[3], dest_index=[0])
+    server_op = Move(None, 4, index=[0], dest_index=[3])
     xformed = server_op.transform(local_op, None)
     print xformed.to_csv_cell()
 
 def main():
     # my_test()
-    # monte_carlo_test(0)
-    for i in xrange(0, 100):
+    # monte_carlo_test(2022)
+    for i in xrange(0, 10000):
         monte_carlo_test(i)
 
 import sys

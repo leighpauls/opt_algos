@@ -88,7 +88,8 @@ class Move(Tree):
 
             if over_len <= len(effective_dest) and over._index[:-1] == effective_dest[:over_len-1] \
                     and (over._index[-1] < effective_dest[over_len-1]
-                         or (over._index[-1] == effective_dest[over_len-1] and over._prec > self.prec)
+                         or (over._index[-1] == effective_dest[over_len-1]
+                             and (over._prec > self.prec or self._index == self._dest_index))
                          or (over_len < len(effective_dest) and over._index[-1] <= effective_dest[over_len-1])):
                 dest_index[over_len-1] += 1
 
@@ -123,14 +124,6 @@ class Move(Tree):
                     return NoOp(end_node, self._prec)
                 else:
                     return Move(end_node, self._prec, over._dest_index[:], dest_index)
-
-            # TODO: is there a more general case to be handled here?
-            # check for an immediate neighbor swap
-            if src_index[:-1] == over._index[:-1] \
-                    == dest_index[:-1] == over._dest_index[:-1] \
-                    and src_index[-1] == over._dest_index[-1] \
-                    and over._index[-1] == dest_index[-1]:
-                return NoOp(end_node, self._prec)
 
             # HACK: don't try to xform over/with a pointless move, it just makes the logic suck
             if over._index == over._dest_index:

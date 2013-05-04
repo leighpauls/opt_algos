@@ -62,11 +62,14 @@ class Remove(Tree):
                     idx[over_len-1] += 1
         elif isinstance(over, Remove):
             # look for common/redundant duplicates
+            to_remove = []
             for over_idx in over._index_list:
                 over_len = len(over_idx)
                 for idx in index_list:
                     if over_len <= len(idx) and over_idx == idx[:over_len]:
-                        index_list.remove(idx)
+                        to_remove.append(idx)
+            for idx in to_remove:
+                index_list.remove(idx)
 
             # sibling removal shifts
             for idx in index_list:
