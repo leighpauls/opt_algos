@@ -1,4 +1,4 @@
-from algos.cortex import ValueNode, operation
+from algos.cortex import CortexNode, operation
 from algos.cortex.server import Server
 from algos.cortex.client import Client
 from concur import ConcurrentBuffer
@@ -24,8 +24,8 @@ def new_test_client(server, buf):
 
 def simple_cortex_test():
     # make some initial values
-    child = ValueNode(value=["a","b","c"])
-    parent = ValueNode(value=["z","x"], children=[child])
+    child = CortexNode(value=["a","b","c"])
+    parent = CortexNode(value=["z","x"], children=[child])
     server = Server(parent)
 
     buf = ConcurrentBuffer()

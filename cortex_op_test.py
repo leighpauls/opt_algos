@@ -1,8 +1,8 @@
 from algos.cortex.operation import Insert, Delete, Create, Remove, Move
-from algos.cortex import ValueNode
+from algos.cortex import CortexNode
 
 def main():
-    value1 = ValueNode(['a', 'b', 'c'])
+    value1 = CortexNode(['a', 'b', 'c'])
     value2 = value1.clone()
     
     op1 = Insert(None, 1, [], 1, 'd')

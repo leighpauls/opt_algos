@@ -4,7 +4,7 @@ class Initializer:
     Attributes:
     remote_id -- the ID assigned to the remote
     precedence -- the precedence of the remote
-    initial_value -- ValueNode to start the client with
+    initial_value -- CortexNode to start the client with
     initial_state -- the server state number at the given value
     """
     def __init__(self, remote_id, precedence, initial_value, initial_state):

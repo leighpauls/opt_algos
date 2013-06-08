@@ -3,7 +3,7 @@ from ..operation.operation import Operation
 from server_node import ServerNode
 from remote import Remote
 from state import State
-from .. import ValueNode
+from .. import CortexNode
 
 class Server:
     """The main state representation of the Central OPt server
@@ -21,7 +21,7 @@ class Server:
         self.remotes = {}
         self.root = self.tip = ServerNode()
         self.root.append_state_axis(Server.SERVER_HIDDEN_ID)
-        self.value = initial_value.clone_tree() if initial_value is not None else ValueNode()
+        self.value = initial_value.clone_tree() if initial_value is not None else CortexNode()
 
         self._debug_trans_history = []
 
