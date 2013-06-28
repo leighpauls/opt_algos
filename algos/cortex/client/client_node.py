@@ -1,7 +1,8 @@
 from ..operation import *
 
 class ClientNode:
-    """A single node in the client's history, an intersection between local and server ops
+    """A single node in the client's history, an intersection between local and
+    server ops
     Attribtues:
     server_state -- Number of the server change state
     local_state -- Number of the local change state
@@ -31,10 +32,13 @@ class ClientNode:
         self.server_op = op
 
     def transform_local_op(self, end_server_state, root):
-        """Modify the state space until a local Operation leads out of (self.local_state, end_server_state)
-        Assumes that there is a direct path from <root> to end_server_state along the server axis, and that 
-        <root> is one client op older than self, and 0 or more server ops older
-        Assumes that enough server state operations lead from root to get to <end_server_state>
+        """Modify the state space until a local Operation leads out of
+        (self.local_state, end_server_state)
+        Assumes that there is a direct path from <root> to end_server_state
+        along the server axis, and that <root> is one client op older than self,
+        and 0 or more server ops older
+        Assumes that enough server state operations lead from root to get to
+        <end_server_state>
         Params:
         end_server_state -- server state Number to transform the local op to
         root -- ClientNode gaurenteed to be older than self and the result
@@ -45,7 +49,8 @@ class ClientNode:
             # no need to transform
             return self
 
-        if root.local_state != self.local_state - 1 or root.server_state > self.server_state:
+        if (root.local_state != self.local_state - 1
+            or root.server_state > self.server_state):
             raise "Trying to use an invalid root"
 
         # transform down the root's server axis by building a line of "squares" 
@@ -70,11 +75,14 @@ class ClientNode:
         return cur_node
 
     def transform_server_op(self, end_local_state, root):
-        """Modify the state space until a server operation leads out of (end_local_state, self.server_state)
-        Assumes that the client has made enough changes to get to end_client_state
+        """Modify the state space until a server operation leads out of
+        (end_local_state, self.server_state)
+        Assumes that the client has made enough changes to get to
+        end_client_state
         Params:
         end_local_state -- The client state Number to transform down to
-        root -- a ClientNode in the client axis of self, guaranteed to be older than/as old as any client operations in it's axis
+        root -- a ClientNode in the client axis of self, guaranteed to be older
+        than/as old as any client operations in it's axis
         Returns:
         The Operation created at the end state
         """
@@ -83,8 +91,9 @@ class ClientNode:
         if self.local_state > end_local_state:
             raise "tried to transform a server op backwards"
 
-        # build a straight line of client operations from self to end_client_state
-        # iterate down from root looking for client operations to transform down
+        # build a straight line of client operations from self to 
+        # end_client_state iterate down from root looking for client operations
+        # to transform down
         cur_node = root
         while cur_node.local_state != end_local_state:
             # look for a client op
@@ -148,10 +157,12 @@ class ClientNode:
                 end_node=transform_end_node))
 
     def to_csv_cell(self):
-        return "(" + str(self._server_state) + " " + str(self._local_state) + ")"
+        return ("(" + str(self._server_state)
+                + " " + str(self._local_state) + ")")
 
     def dbg_try_all_paths(self, initial_value):
-        """Recursively tries every operation path, to find logical xform errors"""
+        """Recursively tries every operation path, to find logical xform
+        errors"""
         try:
             if self.local_op is not None:
                 local_copy = initial_value.clone_tree()
@@ -202,29 +213,39 @@ class ClientNode:
                         next_ss_start = cur_server_state
                         next_row_node = cur_node.local_op.end
 
-                    value_copy = evaluated[cur_server_state][cur_local_state].clone_tree()
+                    value_copy = (evaluated[cur_server_state][cur_local_state]
+                                  .clone_tree())
                     cur_node.local_op.apply(value_copy)
                     if evaluated[cur_server_state][cur_local_state+1] is None:
-                        evaluated[cur_server_state][cur_local_state+1] = value_copy
-                    elif not evaluated[cur_server_state][cur_local_state+1].is_equal(value_copy):
-                        raise Exception("Local op does not converge from (" 
-                                        + str(cur_server_state) + ", " + str(cur_local_state) + ")")
+                        evaluated[cur_server_state][cur_local_state+1] \
+                            = value_copy
+                    elif not (evaluated[cur_server_state][cur_local_state+1]
+                              .is_equal(value_copy)):
+                        raise Exception(
+                            "Local op does not converge from (" 
+                            + str(cur_server_state) + ", "
+                            + str(cur_local_state) + ")")
 
                 if cur_node.server_op is not None:
-                    value_copy = evaluated[cur_server_state][cur_local_state].clone_tree()
+                    value_copy = (evaluated[cur_server_state][cur_local_state]
+                                  .clone_tree())
                     cur_node.server_op.apply(value_copy)
                     if evaluated[cur_server_state+1][cur_local_state] is None:
-                        evaluated[cur_server_state+1][cur_local_state] = value_copy
-                    elif not evaluated[cur_server_state+1][cur_local_state].is_equal(value_copy):
-                        print evaluated[cur_server_state+1][cur_local_state].__dict__
+                        evaluated[cur_server_state+1][cur_local_state] \
+                            = value_copy
+                    elif not (evaluated[cur_server_state+1][cur_local_state]
+                              .is_equal(value_copy)):
+                        print (evaluated[cur_server_state+1][cur_local_state]
+                               .__dict__)
                         print value_copy.__dict__
-                        raise Exception("Server op does not converge from (" 
-                                        + str(cur_server_state) + ", " + str(cur_local_state) + ")")
+                        raise Exception(
+                            "Server op does not converge from (" 
+                            + str(cur_server_state) + ", "
+                            + str(cur_local_state) + ")")
                     cur_node = cur_node.server_op.end
                     cur_server_state += 1
                 else:
                     done = True
-
 
             cur_local_state += 1
         print "Verified all xform pairs"
@@ -252,7 +273,7 @@ class ClientNode:
                 next_row_node = None
                 
                 while cur_node is not None:
-                    cur_row.append(cur_node.to_csv_cell())                        
+                    cur_row.append(cur_node.to_csv_cell())
 
                     if cur_node.local_op is not None:
                         local_row.append(cur_node.local_op.to_csv_cell())
@@ -273,4 +294,3 @@ class ClientNode:
                 f.write("\t".join(cur_row) + "\n")
                 f.write("\t".join(local_row) + "\n")
                 
-        

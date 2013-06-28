@@ -21,15 +21,9 @@ class Server:
         self.remotes = {}
         self.root = self.tip = ServerNode()
         self.root.append_state_axis(Server.SERVER_HIDDEN_ID)
-        self.value = initial_value.clone_tree() if initial_value is not None else CortexNode()
-
-        self._debug_trans_history = []
-
-
-    def dump_csv(self):
-        with open("node_dump.csv", "w") as f:
-            for row in self._debug_trans_history:
-                f.write("\t".join(row) + "\n")
+        self.value = (initial_value.clone_tree() if
+                      initial_value is not None
+                      else CortexNode())
 
     def _apply_change(self, change, remote_id):
         """Apply the change provided to the server state,
@@ -43,7 +37,9 @@ class Server:
         source_operation = Operation.from_change(change, None)
 
         # transform down to the tip
-        new_tip_operation = source_node.transform_to_tip(source_operation, remote_id, self._debug_trans_history)
+        new_tip_operation = source_node.transform_to_tip(
+            source_operation,
+            remote_id)
         new_tip_operation.apply(self.value)
         new_tip = new_tip_operation.end
         
@@ -52,9 +48,12 @@ class Server:
         # tell the remotes about the change
         for cur_remote_id, remote in self.remotes.iteritems():
             if cur_remote_id == remote_id:
-                remote.server_ack_to_client(new_tip.make_ack(cur_remote_id), new_tip.pos)
+                remote.server_ack_to_client(
+                    new_tip.make_ack(cur_remote_id),
+                    new_tip.pos)
             else:
-                remote.server_change_available(self.tip.make_change(cur_remote_id))
+                remote.server_change_available(
+                    self.tip.make_change(cur_remote_id))
             youngest_root.age_to_include(remote.last_acked_state)
 
         self.tip = new_tip
@@ -63,7 +62,6 @@ class Server:
         while self.root.operation is not None and \
                 not self.root.operation.end.pos.is_younger_than(youngest_root):
             self.root = self.root.operation.end
-
 
     def add_new_remote(self, handle_server_change, handle_ack_available):
         """Creates a new Remote controller for communication with a new Client

@@ -1,8 +1,10 @@
 class Change:
     """Represents a change, readable by both Server and Client
     Attributes:
-    src_clinet_state -- The source state as understood by the client sending/recieveing this message
-    src_server_state -- The source state of the server, relative to the client state sending/recieving this message
+    src_clinet_state -- The source state as understood by the client
+    sending/recieveing this message
+    src_server_state -- The source state of the server, relative to the client
+    state sending/recieving this message
     op -- The operation identifier
     tree_index -- index to the node to apply the change
     linear_index -- value index to apply at
