@@ -27,26 +27,10 @@ class Client:
         self._tip = self._root = ClientNode(server_state=init.initial_state,
                                             local_state=0)
 
-        
-        self._dbg_oldest_root = self._root
-        self._dbg_oldest_val = self._value.clone_tree()
-
         self._local_change_q = []
         self._send_change_cb = send_change_cb
         self._pending_ack = False
         self._prec = init.precedence
-
-    def dbg_try_all(self):
-        self._dbg_oldest_root.dbg_try_all_paths(self._dbg_oldest_val)
-    def dbg_dump_old_csv(self):
-        self._dbg_oldest_root.dump_csv()
-    def do_debug(self):
-        self.dbg_dump_old_csv()
-        self._dbg_oldest_root.dbg_verify_all_xforms(
-            self._dbg_oldest_val,
-            self._tip._server_state + 1,
-            self._tip._local_state + 1)
-        self.dbg_try_all()
 
     @property
     def value(self):
@@ -94,11 +78,7 @@ class Client:
             root=self._root)
 
         # apply the transformed operation locally
-        try:
-            transformed_op.apply(self._value)
-        except Exception as e:
-            print "Going to debug because:", e
-            self.do_debug()
+        transformed_op.apply(self._value)
 
         old_tip = self._tip
         self._tip = transformed_op.end
