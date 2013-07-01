@@ -24,6 +24,7 @@ class Client:
         init -- Initializer object sent from the Server
         """
         self._value = init.initial_value
+        self._value.set_parent(self)
         self._tip = self._root = ClientNode(server_state=init.initial_state,
                                             local_state=0)
 
@@ -38,8 +39,12 @@ class Client:
     @property
     def prec(self):
         return self._prec
+
+    @property
+    def parent(self):
+        return None
     
-    def apply_local_change(self, operation_class, *op_args):
+    def _apply_local_change(self, operation_class, *op_args):
         """Apply the change to the local value and enqueue it to send to the
         server
         Params:
@@ -130,4 +135,10 @@ class Client:
             index_list=self._root.local_op.index_list)
         self._pending_ack = True
         self._send_change_cb(new_change)
+    
+    def _child_index(self, child):
+        if child is not self._value:
+            raise Exception("Non-root entry of tree tried to find it's index\
+ from the client")
+        return []
     
