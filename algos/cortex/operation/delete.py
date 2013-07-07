@@ -40,6 +40,3 @@ class Delete(Value):
                     return NoOp(end_node, self._prec)
 
         return Delete(end_node, self._prec, tree_index, linear_index)
-
-    def to_csv_cell(self):
-        return "DEL " + str(self._tree_index) + " " + str(self._linear_index) + " p" + str(self._prec)

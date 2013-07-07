@@ -62,11 +62,11 @@ class Move(Tree):
     def calc_effective_dest(src_idx, dest_idx):
         effective_dest = dest_idx[:]
         src_len = len(src_idx)
-        if src_len <= len(effective_dest) \
-                and src_idx[:-1] == effective_dest[:src_len-1] \
-                and (src_idx[-1] < effective_dest[src_len-1]
-                     or (src_idx[-1] <= effective_dest[src_len-1]
-                         and src_len < len(effective_dest))):
+        if (src_len <= len(effective_dest)
+            and src_idx[:-1] == effective_dest[:src_len-1]
+            and (src_idx[-1] < effective_dest[src_len-1]
+                 or (src_idx[-1] <= effective_dest[src_len-1]
+                     and src_len < len(effective_dest)))):
             effective_dest[src_len-1] += 1
         return effective_dest
     
@@ -74,11 +74,11 @@ class Move(Tree):
     def calc_operational_dest(own_src_idx, over_dest_idx):
         operational_dest = over_dest_idx[:]
         src_len = len(own_src_idx)
-        if src_len <= len(operational_dest) \
-                and own_src_idx[:-1] == operational_dest[:src_len-1] \
-                and (own_src_idx[-1] < operational_dest[src_len-1]
-                     or (own_src_idx[-1] <= operational_dest[src_len-1]
-                         and src_len < len(operational_dest))):
+        if (src_len <= len(operational_dest)
+            and own_src_idx[:-1] == operational_dest[:src_len-1]
+            and (own_src_idx[-1] < operational_dest[src_len-1]
+                 or (own_src_idx[-1] <= operational_dest[src_len-1]
+                     and src_len < len(operational_dest)))):
             operational_dest[src_len-1] -= 1
         return operational_dest
     

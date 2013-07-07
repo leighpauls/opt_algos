@@ -37,18 +37,21 @@ class Insert(Value):
         linear_index = self._linear_index
         if isinstance(over, Value) and over._tree_index == tree_index:
             if isinstance(over, Insert):
-                if over._linear_index < linear_index or (
-                    over._linear_index == linear_index and over._prec > self._prec):
+                if (over._linear_index < linear_index
+                    or (over._linear_index == linear_index
+                        and over._prec > self._prec)):
                     linear_index += 1
             elif isinstance(over, Delete):
                 if over._linear_index < linear_index:
                     linear_index -= 1
 
-        return Insert(end_node, self._prec, tree_index, linear_index, self._value)
+        return Insert(
+            end_node,
+            self._prec,
+            tree_index,
+            linear_index,
+            self._value)
 
     @property
     def val(self):
         return self._value
-
-    def to_csv_cell(self):
-        return "INS " + str(self._tree_index) + " " + str(self._linear_index) + " p" + str(self._prec)

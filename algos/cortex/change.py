@@ -11,16 +11,17 @@ class Change:
     val -- value for an INSERT operation
     prec -- the precedence of the server that made the change
     """
-    def __init__(self,
-                 src_client_state,
-                 src_rel_server_state,
-                 op,
-                 tree_index,
-                 dest_tree_index,
-                 linear_index,
-                 val,
-                 precedence,
-                 index_list):
+    def __init__(
+        self,
+        src_client_state,
+        src_rel_server_state,
+        op,
+        tree_index,
+        dest_tree_index,
+        linear_index,
+        val,
+        precedence,
+        index_list):
         self.src_client_state = src_client_state
         self.src_rel_server_state = src_rel_server_state
         self.op = op

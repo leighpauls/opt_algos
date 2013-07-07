@@ -169,8 +169,8 @@ class ClientNode:
                 self.local_op.apply(local_copy)
                 self.local_op.end.dbg_try_all_paths(local_copy)
         except Exception:
-            print "local (" + \
-                str(self._server_state) + ", " + str(self._local_state) + ")"
+            print ("local (" + str(self._server_state) + ", "
+                   + str(self._local_state) + ")")
             raise
 
         try:
