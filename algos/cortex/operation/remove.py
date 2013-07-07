@@ -12,6 +12,18 @@ class Remove(Tree):
         else:
             self._index_list = index_list
 
+    class Event(object):
+        def __init__(self, old_node, parent):
+            self.OP_NAME = Remove.OP_NAME
+            self._old_node = old_node
+            self._parent = parent
+        @property
+        def old_node(self):
+            return self._old_node
+        @property
+        def parent(self):
+            return self._parent
+
     @property
     def index_list(self):
         return self._index_list
@@ -20,7 +32,8 @@ class Remove(Tree):
         class Pair:
             pass
         remove_pairs = []
-        # build a pointer-based deletion reference so sibling's can't screw with eachother's indicies
+        # build a pointer-based deletion reference so sibling's can't screw with
+        # eachother's indicies
         for index in self._index_list:
             pair = Pair();
             pair.parent = Tree._navigate_to_index_parent(index, value_root)
@@ -36,7 +49,8 @@ class Remove(Tree):
         old_idx_len = len(old_index)
         for removed_index in self._index_list:
             removed_idx_len = len(removed_index)
-            if len(old_index) >= removed_idx_len and old_index[:removed_idx_len-1] == removed_index[:-1]:
+            if (len(old_index) >= removed_idx_len
+                and old_index[:removed_idx_len-1] == removed_index[:-1]):
                 if old_index[removed_idx_len-1] == removed_index[-1]:
                     return None
                 elif old_index[removed_idx_len-1] >= removed_index[-1]:
@@ -57,8 +71,9 @@ class Remove(Tree):
         elif isinstance(over, Create):
             over_len = len(over._index)
             for idx in index_list:
-                if over_len <= len(idx) and over._index[:-1] == idx[:over_len-1] \
-                        and over._index[-1] <= idx[over_len-1]:
+                if (over_len <= len(idx)
+                    and over._index[:-1] == idx[:over_len-1]
+                    and over._index[-1] <= idx[over_len-1]):
                     idx[over_len-1] += 1
         elif isinstance(over, Remove):
             # look for common/redundant duplicates
@@ -73,12 +88,14 @@ class Remove(Tree):
 
             # sibling removal shifts
             for idx in index_list:
-                # need to compare against the original idx, so save only the deltas
+                # need to compare against the original idx, so save only the
+                # deltas
                 idx_len = len(idx)
                 index_deltas = [0] * idx_len
                 for over_idx in over._index_list:
                     over_len = len(over_idx)
-                    if over_len <= idx_len and over_idx[:-1] == idx[:over_len-1]:
+                    if (over_len <= idx_len
+                        and over_idx[:-1] == idx[:over_len-1]):
                         if over_idx[-1] < idx[over_len-1]:
                             index_deltas[over_len-1] -= 1
                         elif over_idx[-1] == idx[over_len-1]:
@@ -106,12 +123,14 @@ class Remove(Tree):
                         index_list.append(over._dest_index[:])
 
                     # removing sibling/child of move source?
-                    if src_len <= idx_len and over._index[:-1] == idx[:src_len-1] \
-                            and over._index[-1] < idx[src_len-1]:
+                    if (src_len <= idx_len
+                        and over._index[:-1] == idx[:src_len-1]
+                        and over._index[-1] < idx[src_len-1]):
                         idx[src_len-1] -= 1
                     # removing sibling/child of move dest?
-                    if dest_len <= idx_len and over._dest_index[:-1] == idx[:dest_len-1] \
-                            and over._dest_index[-1] <= idx[dest_len-1]:
+                    if (dest_len <= idx_len
+                        and over._dest_index[:-1] == idx[:dest_len-1]
+                        and over._dest_index[-1] <= idx[dest_len-1]):
                         idx[dest_len-1] += 1
 
         # remove redundant operations since they will cause errors
@@ -122,18 +141,14 @@ class Remove(Tree):
                 continue
             for other_idx in index_list[i+1:]:
                 if other_idx not in redundant:
-                    if len(idx) <= len(other_idx) and idx == other_idx[:len(idx)]:
+                    if (len(idx) <= len(other_idx)
+                        and idx == other_idx[:len(idx)]):
                         redundant.append(other_idx)
-                    elif len(idx) > len(other_idx) and idx[:len(other_idx)] == other_idx:
+                    elif (len(idx) > len(other_idx)
+                          and idx[:len(other_idx)] == other_idx):
                         redundant.append(idx)
                         break
         for r in redundant:
             index_list.remove(r)
-        
-                    
                     
         return Remove(end_node, self._prec, index=None, index_list=index_list)
-
-    def to_csv_cell(self):
-        return ("REM " + str(self._index_list) + " p" + str(self._prec)) \
-            .replace('[[', '[[[[').replace(']]', ']]]]')

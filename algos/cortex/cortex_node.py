@@ -1,10 +1,34 @@
 from operation import Insert, Delete, Create, Remove, Move
+import json
 
 class CortexNode:
     def __init__(self, value=None, children=None, parent=None):
         self._value = value if value is not None else []
         self._children = children if children is not None else []
         self._parent = parent
+        self._callback_map = {}
+
+    def add_listener(self, operation_types, callback):
+        for op_type in operation_types:
+            op_name = op_type.OP_NAME
+            if op_name in self._callback_map:
+                self._callback_map[op_name] = [callback]
+            else:
+                self._callback_map[op_name].push(callback)
+
+    def remove_listener(self, operation_types, callback):
+        for op_type in operation_types:
+            op_name = op_type.OP_NAME
+            self._callback_map[op_name].remove(callback)
+
+    def trigger_event(self, event):
+        """Don't call this yourself, it should only be activated by one of the 
+        local_op_* functions"""
+        if event.OP_NAME not in self._callback_map:
+            return None
+        # call all the callbacks
+        for callback in self._callback_map[event.OP_NAME]:
+            callback(event)
 
     def is_equal(self, other):
         if (self._value != other._value 
@@ -14,6 +38,15 @@ class CortexNode:
             if not self._children[i].is_equal(other._children[i]):
                 return False
         return True
+
+    def _to_struct(self):
+        return {
+            "value": self._value,
+            "children": [ch._to_struct() for ch in self._children]
+            }
+
+    def to_json(self):
+        return json.dumps(self._to_struct())
 
     @property
     def children(self):

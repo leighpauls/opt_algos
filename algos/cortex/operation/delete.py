@@ -8,9 +8,15 @@ class Delete(Value):
     def __init__(self, end_node, prec, tree_index, linear_index):
         Value.__init__(self, end_node, prec, tree_index, linear_index)
 
+    class Event(Value.Event):
+        def __init__(self, target_node):
+            self.OP_NAME = Delete.OP_NAME
+            Value.Event.__init__(self, target_node)
+            
     def apply(self, value_root):
         node = self._navigate_to_tree_node(value_root)
         node.delete_value(self._linear_index)
+        node.trigger_event(self.Event(node))
 
     def transform(self, over, end_node):
         from insert import Insert

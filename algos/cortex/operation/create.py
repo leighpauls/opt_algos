@@ -11,9 +11,18 @@ class Create(Tree):
         Tree.__init__(self, end_node, prec)
         self._index = index
 
+    class Event(object):
+        def __init__(self, target_node):
+            self.OP_NAME = Create.OP_NAME
+            self._target_node = target_node
+        @property
+        def new_node(self):
+            return self._target_node
+
     def apply(self, value_root):
         node = Tree._navigate_to_index_parent(self._index, value_root)
         node.create_child(self._index[-1])
+        node.trigger_event(self.Event(node))
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]
@@ -36,19 +45,24 @@ class Create(Tree):
 
         elif isinstance(over, Create):
             over_len = len(over._index)
-            if over_len <= len(index) and over._index[:-1] == index[:over_len-1] \
-                    and (over._index[-1] < index[over_len-1]
-                         or (over._index[-1] == index[over_len-1] and over._prec > self.prec)
-                         or (over_len < len(index) and over._index[-1] <= index[over_len-1])):
+            if (over_len <= len(index)
+                and over._index[:-1] == index[:over_len-1]
+                and (over._index[-1] < index[over_len-1]
+                     or (over._index[-1] == index[over_len-1]
+                         and over._prec > self.prec)
+                     or (over_len < len(index)
+                         and over._index[-1] <= index[over_len-1]))):
                 index[over_len-1] += 1
 
         elif isinstance(over, Remove):
             for idx in over._index_list:
                 over_len = len(idx)
-                if over_len <= len(self._index) and idx[:-1] == self._index[:over_len-1]:
+                if (over_len <= len(self._index)
+                    and idx[:-1] == self._index[:over_len-1]):
                     if idx[-1] < self._index[over_len-1]:
                         index[over_len-1] -= 1
-                    elif over_len < len(self._index) and idx[-1] == self._index[over_len-1]:
+                    elif (over_len < len(self._index)
+                          and idx[-1] == self._index[over_len-1]):
                         return NoOp(end_node, self._prec)
 
         elif isinstance(over, Move):
@@ -79,8 +93,3 @@ class Create(Tree):
     @property
     def tree_index(self):
         return self._index
-
-
-
-    def to_csv_cell(self):
-        return "CRE " + str(self._index) + " p" + str(self._prec)

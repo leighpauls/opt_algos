@@ -13,9 +13,18 @@ class Insert(Value):
         Value.__init__(self, end_node, prec, tree_index, linear_index)
         self._value = val
 
+    class Event(Value.Event):
+        def __init__(self, target_node):
+            self.OP_NAME = Insert.OP_NAME
+            Value.Event.__init__(self, target_node)
+        @property
+        def value(self):
+            return self._value
+
     def apply(self, value_root):
         node = self._navigate_to_tree_node(value_root)
         node.insert_value(self._linear_index, self._value)
+        node.trigger_event(self.Event(node))
 
     def transform(self, over, end_node):
         from delete import Delete

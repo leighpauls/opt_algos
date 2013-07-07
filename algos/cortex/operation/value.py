@@ -11,6 +11,16 @@ class Value(Operation):
         self._tree_index = tree_index
         self._linear_index = linear_index
 
+    class Event(object):
+        def __init__(self, target_node):
+            self._target_node = target_node
+        @property
+        def target_node(self):
+            return self._target_node
+        @property
+        def linear_index(self):
+            return self._linear_index
+
     def _navigate_to_tree_node(self, value_root):
         cur_node = value_root
         for index in self._tree_index:
