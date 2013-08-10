@@ -13,12 +13,15 @@ class Remote:
                  on_new_server_change,
                  on_ack_available,
                  initializer,
-                 initial_state):
+                 initial_state,
+                 on_remote_closed):
         self._on_new_remote_change = on_new_remote_change
         self._on_new_server_change = on_new_server_change
         self._on_ack_available = on_ack_available
         self._initializer = initializer
         self.last_acked_state = State(initial_state)
+        self._on_remote_closed = on_remote_closed
+
     def client_change_available(self, change):
         self._on_new_remote_change(change)
     def server_change_available(self, change):
@@ -28,3 +31,6 @@ class Remote:
         self._on_ack_available(ack)
     def get_initializer(self):
         return self._initializer
+
+    def close(self):
+        self._on_remote_closed()

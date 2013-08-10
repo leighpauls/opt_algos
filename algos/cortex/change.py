@@ -32,3 +32,28 @@ class Change:
         self.prec = precedence
         self.index_list = index_list
         
+    def to_dict(self):
+        return {
+            "src_client_state": self.src_client_state,
+            "src_rel_server_state": self.src_rel_server_state,
+            "op": self.op,
+            "tree_index": self.tree_index,
+            "dest_tree_index": self.dest_tree_index,
+            "linear_index": self.linear_index,
+            "val": self.val,
+            "prec": self.prec,
+            "index_list": self.index_list}
+        
+    @staticmethod
+    def from_dict(obj):
+        return Change(
+            obj["src_client_state"],
+            obj["src_rel_server_state"],
+            obj["op"],
+            obj["tree_index"],
+            obj["dest_tree_index"],
+            obj["linear_index"],
+            obj["val"],
+            obj["prec"],
+            obj["index_list"])
+    

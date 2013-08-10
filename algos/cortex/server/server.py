@@ -86,12 +86,18 @@ class Server:
                 raise "Client tried to change it's own precedence"
             self._apply_change(change=change,
                                remote_id=new_remote_id)
+            
+        def handle_remote_closed():
+            print "removing " + str(new_remote_id) + " from:"
+            print self.remotes
+            self.remotes.pop(new_remote_id)
 
         new_remote = Remote(
             on_new_remote_change=on_remote_data,
             on_new_server_change=handle_server_change,
             on_ack_available=handle_ack_available,
             initializer=initer,
-            initial_state=self.tip.pos)
+            initial_state=self.tip.pos,
+            on_remote_closed=handle_remote_closed)
         self.remotes[new_remote_id] = new_remote
         return new_remote

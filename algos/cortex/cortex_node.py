@@ -1,5 +1,4 @@
 from operation import Insert, Delete, Create, Remove, Move
-import json
 
 class CortexNode:
     def __init__(self, value=None, children=None, parent=None):
@@ -39,14 +38,25 @@ class CortexNode:
                 return False
         return True
 
-    def _to_struct(self):
+    def to_dict(self):
         return {
             "value": self._value,
-            "children": [ch._to_struct() for ch in self._children]
+            "children": [ch.to_dict() for ch in self._children]
             }
 
-    def to_json(self):
-        return json.dumps(self._to_struct())
+    @staticmethod
+    def _from_dict_recurse(obj, parent):
+        res = CortexNode(
+            value=obj["value"],
+            parent=parent)
+        res.children = [
+            CortexNode._from_dict_recurse(ch_obj, res)
+            for ch_obj in obj["children"]]
+        return res
+
+    @staticmethod
+    def from_dict(obj):
+        return CortexNode._from_dict_recurse(obj, None)
 
     @property
     def children(self):
