@@ -1,7 +1,7 @@
 import asyncore, socket, json
 
-from ...algos.cortex.server import Server
-from ...algos.cortex import Change
+from ..algo.server import Server
+from ..algo import Change
 
 class CortexServerHandler(asyncore.dispatcher_with_send):
 

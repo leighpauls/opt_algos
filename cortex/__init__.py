@@ -1,2 +1,3 @@
-import algo, net
+from . import algo, net
+
 

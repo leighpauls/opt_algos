@@ -1,7 +1,7 @@
 from algos.cortex import CortexNode, operation
 from algos.cortex.server import Server
 from algos.cortex.client import Client
-from concur import ConcurrentBuffer
+from util import ConcurrentBuffer
 
 import random
 

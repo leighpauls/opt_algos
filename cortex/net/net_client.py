@@ -1,7 +1,7 @@
 import asyncore, socket, json
 
-from ...algos.cortex import operation, Initializer, Ack
-from ...algos.cortex.client import Client
+from ..algo import operation, Initializer, Ack
+from ..algo.client import Client
 
 class CortexClient(asyncore.dispatcher):
     def __init__(self, host, port):
