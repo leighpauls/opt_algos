@@ -50,6 +50,8 @@ class Client:
         Params:
         operation -- The Operation to apply
         """
+        # TODO: if a change is currently being resolved, enqueue this one
+        # until after the tree isn't assumed to be static
         new_tip = ClientNode(server_state=self._tip.server_state,
                              local_state=self._tip.local_state + 1)
         operation = operation_class(new_tip, self._prec, *op_args)
