@@ -1,6 +1,6 @@
-from algos.cortex import CortexNode, operation
-from algos.cortex.server import Server
-from algos.cortex.client import Client
+from cortex.algo import CortexNode, operation
+from cortex.algo.server import Server
+from cortex.algo.client import Client
 from util import ConcurrentBuffer
 
 import random
@@ -102,7 +102,7 @@ def monte_carlo_test(seed):
             raise Exception("Client did not converge, seed: " + str(seed))
     print seed, "worked with", len(clients), "clients"
 
-from algos.cortex.operation import Create, Remove, Move
+from cortex.algo.operation import Create, Remove, Move
 
 def my_test():
     """Place to put individual probing tests"""

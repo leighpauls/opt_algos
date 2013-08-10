@@ -1,1 +1,1 @@
-import concur
+from concur import ConcurrentBuffer
