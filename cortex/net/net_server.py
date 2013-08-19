@@ -13,7 +13,7 @@ class CortexServerHandler(asyncore.dispatcher_with_send):
         self._send_initializer(self._remote.get_initializer())
 
     def handle_read(self):
-        print "Incommint read!"
+        print "Incomming read!"
         data = self.recv(8192)
         if not data:
             print "got a read with no data...?"
@@ -27,6 +27,8 @@ class CortexServerHandler(asyncore.dispatcher_with_send):
         
     def handle_close(self):
         print "Socket closed!"
+        # TODO: don't close the remote on a physical disconnection (it avoids 
+        # the whole point of OT)
         self._remote.close()
         self.close()
 

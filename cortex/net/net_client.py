@@ -1,6 +1,6 @@
 import asyncore, socket, json
 
-from ..algo import operation, Initializer, Ack
+from ..algo import operation, Initializer, Ack, Change
 from ..algo.client import Client
 
 class CortexClient(asyncore.dispatcher):
@@ -17,14 +17,19 @@ class CortexClient(asyncore.dispatcher):
             return
         obj = json.loads(data)
         obj_type = obj["type"]
-        if obj_type == "server_initializer":
+        if obj_type == "server_change":
+            print "applying change: " + data
+            self._cortex_client.apply_server_change(
+                Change.from_dict(obj["change"]))
+            print "new tree: ", self._cortex_client.value.to_dict()
+        elif obj_type == "server_ack":
+            self._cortex_client.apply_server_ack(Ack.from_dict(obj["ack"]))
+        elif obj_type == "server_initializer":
             print "got init:", obj["initializer"]
             self._cortex_client = Client(
                 self._on_client_change,
                 Initializer.from_dict(obj["initializer"]))
             self._cortex_client.value.local_op_append_child()
-        elif obj_type == "server_ack":
-            self._cortex_client.apply_server_ack(Ack.from_dict(obj["ack"]))
         else:
             print "unknwon message recieved: " + data
 
