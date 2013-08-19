@@ -1,33 +1,86 @@
-from ..algos.cortex import client as client, operation as operation 
-from operation import Insert, Delete, Create, Remove, Move
+import sys, asyncore, json
 
-import sys
+from ..algo import client
+from ..algo.operation import Insert, Delete, Create, Remove, Move
+from ..net import CortexClient
 
-ALL_OPERATIONS = [
-    operation.Insert,
-    operation.Delete,
-    operation.Create,
-    operation.Remove,
-    operation.Move]
+from operator import Operator
 
-class Structed:
-    def __init__(self, cortex_client):
-        self._client = cortex_client
-        self._bind_handlers_recursive(self._client.value)
+ALL_OPERATIONS = [Insert, Delete, Create, Remove, Move]
 
-    def bind_handlers_recursive(self, value):
+"""
+Hacky implementation, this should not be multi-process like it is....
+
+Structed operations:
+- insert
+- delete
+- append
+- remove
+- move
+TODO: make these two timed on/off from emacs like typing-debouncing
+- hold_local_lock (HACK: does not auto-sync by default for now)
+- release_local_lock
+"""
+
+class Structed(asyncore.file_dispatcher):
+    def __init__(self, net_client):
+        asyncore.file_dispatcher.__init__(self, sys.stdin)
+        self._net_client = net_client
+        self._operator = None
+
+    def handle_read(self):
+        """Overrides asyncore.file_dispatcher"""
+        data = self.recv(8192)
+        try:
+            obj = json.loads(data)
+        except:
+            obj = None
+
+        if obj is None:
+            print "invalid read, tree state: "
+            print json.dumps(self._cortex_client.value.to_dict())
+            return
+
+        obj_type = obj["type"]
+        if obj_type == "hold_local_lock":
+            self._on_local_lock()
+        elif obj_type == "release_local_lock":
+            self._on_release_lock()
+        else:
+            self._operator.handle_operation(obj)
+            
+    def _on_local_lock(self):
+        self._net_client.hold_local_lock()
+    def _on_local_lock(self):
+        self._net_client.release_local_lock()
+    
+        
+    def _bind_handlers_recursive(self, value):
+        """ for the initial binding of handlers to the tree"""
         value.add_listener(ALL_OPERATIONS, self._handle_change)
         for child in value.children:
             self.bind_handlers_recursive(child)
 
     def _handle_change(self, event):
         # HACK: just stream the whole tree back
-        sys.stdout.writelines([self._client.value.to_json()])
+        sys.stdout.writelines([json.dumps(self._cortex_client.value.to_dict())])
+
+        # add listeners to any new nodes
+        if event.OP_NAME == Create.OP_NAME:
+            event.new_node.add_listener(ALL_OPERATIONS, self._handle_change)
+
+    def on_inited(self):
+        self._cortex_client = self._net_client.cortex_client
+        self._operator = Operator(self._cortex_client.value)
+        self._bind_handlers_recursive(self._cortex_client.value)
+        sys.stdout.writelines([json.dumps(self._cortex_client.value.to_dict())])
+
 
 def main():
-    while True:
-        cmd_string = sys.stdin.readline()
-        
+    net_client = CortexClient("localhost", 11111)
+    structed = Structed(net_client)
+    net_client.register_initialized_callback(structed.on_inited)
+    asyncore.loop()
 
 if __name__ == "__main__":
     main()

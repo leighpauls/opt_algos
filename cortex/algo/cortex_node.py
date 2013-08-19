@@ -10,7 +10,7 @@ class CortexNode:
     def add_listener(self, operation_types, callback):
         for op_type in operation_types:
             op_name = op_type.OP_NAME
-            if op_name in self._callback_map:
+            if op_name not in self._callback_map:
                 self._callback_map[op_name] = [callback]
             else:
                 self._callback_map[op_name].push(callback)
@@ -167,13 +167,8 @@ class CortexNode:
         src_idx = self._get_index()
         dest_idx = after_node._get_index()
         dest_idx[-1] += 1
-        dest_idx = CortexNode.__adjust_dest_idx(
-            src_idx,
-            dest_idx)
-        self._apply_local_change(
-            Move,
-            src_idx,
-            dest_idx)
+        dest_idx = CortexNode.__adjust_dest_idx(src_idx, dest_idx)
+        self._apply_local_change(Move, src_idx, dest_idx)
 
     def local_op_move_before(self, before_node):
         """Move this node to be the sibling node before to before_node"""
@@ -181,10 +176,7 @@ class CortexNode:
         dest_idx = CortexNode.__adjust_dest_idx(
             src_idx,
             before_node._get_index())
-        self._apply_local_change(
-            Move,
-            src_idx,
-            dest_idx)
+        self._apply_local_change(Move, src_idx, dest_idx)
 
     def local_op_move_append(self, new_parent):
         """Move this node to be the last child of new_parent"""
@@ -192,10 +184,7 @@ class CortexNode:
         dest_idx = CortexNode.__adjust_dest_idx(
             src_idx,
             new_parent._get_index() + [len(new_parent._children)])
-        self._apply_local_change(
-            Move,
-            src_idx,
-            dest_idx)
+        self._apply_local_change(Move, src_idx, dest_idx)
 
     def local_op_move_prepend(self, new_parent):
         """Move this node to be the first child of new_parent"""
@@ -203,10 +192,15 @@ class CortexNode:
         dest_idx = CortexNode.__adjust_dest_idx(
             src_idx,
             new_parent._get_index() + [0])
-        self._apply_local_change(
-            Move,
+        self._apply_local_change(Move, src_idx, dest_idx)
+
+    def local_op_move_to(self, new_parent, new_child_idx):
+        """Move this node to a specific index of new_parent"""
+        src_idx = self._get_index()
+        dest_idx = CortexNode.__adjust_dest_idx(
             src_idx,
-            dest_idx)
+            new_parent._get_index() + [new_child_idx])
+        self._apply_local_change(Move, src_idx, dest_idx)
 
     def local_op_insert_char(self, index, val):
         """Insert 1 charactor at index in this node's value"""
