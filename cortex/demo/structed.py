@@ -37,8 +37,8 @@ class Structed(asyncore.file_dispatcher):
             obj = None
 
         if obj is None:
-            print "invalid read, tree state: "
-            print json.dumps(self._cortex_client.value.to_dict())
+            print "invalid read: ", data
+            self._output_tree()
             return
 
         obj_type = obj["type"]
@@ -47,6 +47,9 @@ class Structed(asyncore.file_dispatcher):
         elif obj_type == "release_local_lock":
             self._on_release_lock()
         else:
+            print "before change:"
+            self._output_tree()
+            print "..."
             self._operator.handle_operation(obj)
             
     def _on_local_lock(self):
@@ -59,11 +62,11 @@ class Structed(asyncore.file_dispatcher):
         """ for the initial binding of handlers to the tree"""
         value.add_listener(ALL_OPERATIONS, self._handle_change)
         for child in value.children:
-            self.bind_handlers_recursive(child)
+            self._bind_handlers_recursive(child)
 
     def _handle_change(self, event):
         # HACK: just stream the whole tree back
-        sys.stdout.writelines([json.dumps(self._cortex_client.value.to_dict())])
+        self._output_tree()
 
         # add listeners to any new nodes
         if event.OP_NAME == Create.OP_NAME:
@@ -73,7 +76,10 @@ class Structed(asyncore.file_dispatcher):
         self._cortex_client = self._net_client.cortex_client
         self._operator = Operator(self._cortex_client.value)
         self._bind_handlers_recursive(self._cortex_client.value)
-        sys.stdout.writelines([json.dumps(self._cortex_client.value.to_dict())])
+        self._output_tree()
+
+    def _output_tree(self):
+        print self._cortex_client.value.to_dict()
 
 
 def main():

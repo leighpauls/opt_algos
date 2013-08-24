@@ -13,7 +13,7 @@ class CortexNode:
             if op_name not in self._callback_map:
                 self._callback_map[op_name] = [callback]
             else:
-                self._callback_map[op_name].push(callback)
+                self._callback_map[op_name].append(callback)
 
     def remove_listener(self, operation_types, callback):
         for op_type in operation_types:
@@ -49,7 +49,7 @@ class CortexNode:
         res = CortexNode(
             value=obj["value"],
             parent=parent)
-        res.children = [
+        res._children = [
             CortexNode._from_dict_recurse(ch_obj, res)
             for ch_obj in obj["children"]]
         return res
@@ -89,9 +89,13 @@ class CortexNode:
         self._value.pop(linear_index)
 
     def create_child(self, child_index):
+        """Create a child at child_index, and return the new child
+        int -> CortexNode"""
         if child_index > len(self._children):
             raise Exception("Tried to create child past the end of the array")
-        self._children.insert(child_index, CortexNode(parent=self))
+        new_node = CortexNode(parent=self)
+        self._children.insert(child_index, new_node)
+        return new_node
     
     def insert_child(self, child_index, child):
         if child_index > len(self._children):

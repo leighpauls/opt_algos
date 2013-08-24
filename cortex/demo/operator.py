@@ -19,7 +19,7 @@ class Operator:
         elif obj_type == "move":
             self._on_move(obj)
         else:
-            print "unknwon operation: " + data
+            print "unknwon operation: ", obj
 
     def _get_node(self, tree_idx):
         cur_node = self._value

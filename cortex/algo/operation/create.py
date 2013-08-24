@@ -12,17 +12,17 @@ class Create(Tree):
         self._index = index
 
     class Event(object):
-        def __init__(self, target_node):
+        def __init__(self, new_node):
             self.OP_NAME = Create.OP_NAME
-            self._target_node = target_node
+            self._new_node = new_node
         @property
         def new_node(self):
-            return self._target_node
+            return self._new_node
 
     def apply(self, value_root):
         node = Tree._navigate_to_index_parent(self._index, value_root)
-        node.create_child(self._index[-1])
-        node.trigger_event(self.Event(node))
+        new_node = node.create_child(self._index[-1])
+        node.trigger_event(self.Event(new_node))
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]
