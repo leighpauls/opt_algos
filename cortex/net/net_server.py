@@ -2,6 +2,7 @@ import asyncore, socket, json
 
 from ..algo.server import Server
 from ..algo import Change
+from .. import logging as clog
 
 class CortexServerHandler(asyncore.dispatcher_with_send):
 
@@ -13,20 +14,20 @@ class CortexServerHandler(asyncore.dispatcher_with_send):
         self._send_initializer(self._remote.get_initializer())
 
     def handle_read(self):
-        print "Incomming read!"
+        clog.info("Incomming read!")
         data = self.recv(8192)
         if not data:
-            print "got a read with no data...?"
+            clog.err("got a read with no data...?")
             return
         obj = json.loads(data)
         if obj["type"] == "client_change":
             self._remote.client_change_available(
                 Change.from_dict(obj["change"]))
         else:
-            print "unknown message recieved: " + data
+            clog.err("unknown message recieved: " + data)
         
     def handle_close(self):
-        print "Socket closed!"
+        clog.info("Socket closed!")
         # TODO: don't close the remote on a physical disconnection (it avoids 
         # the whole point of OT)
         self._remote.close()
@@ -65,7 +66,7 @@ class CortexServer(asyncore.dispatcher):
         pair = self.accept()
         if pair is not None:
             sock, addr = pair
-            print 'Incoming connection from %s' % repr(addr)
+            clog.info('Incoming connection from %s' % repr(addr))
             handler = CortexServerHandler(sock, self.cortex_server)
 
 def main():

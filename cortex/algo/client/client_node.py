@@ -1,4 +1,5 @@
 from ..operation import *
+from ... import logging as clog
 
 class ClientNode:
     """A single node in the client's history, an intersection between local and
@@ -169,8 +170,8 @@ class ClientNode:
                 self.local_op.apply(local_copy)
                 self.local_op.end.dbg_try_all_paths(local_copy)
         except Exception:
-            print ("local (" + str(self._server_state) + ", "
-                   + str(self._local_state) + ")")
+            clog.err(("local (" + str(self._server_state) + ", "
+                      + str(self._local_state) + ")"))
             raise
 
         try:
@@ -179,8 +180,9 @@ class ClientNode:
                 self.server_op.apply(server_copy)
                 self.server_op.end.dbg_try_all_paths(server_copy)
         except Exception:
-            print "srver (" + \
-                str(self._server_state) + ", " + str(self._local_state) + ")"
+            clog.err("srver ("
+                     + str(self._server_state) + ", "
+                     + str(self._local_state) + ")")
             raise
 
     def dbg_verify_all_xforms(self, initial_value, server_age, local_age):
@@ -235,9 +237,9 @@ class ClientNode:
                             = value_copy
                     elif not (evaluated[cur_server_state+1][cur_local_state]
                               .is_equal(value_copy)):
-                        print (evaluated[cur_server_state+1][cur_local_state]
-                               .__dict__)
-                        print value_copy.__dict__
+                        clog.err(evaluated[cur_server_state+1][cur_local_state]
+                                 .__dict__)
+                        clog.err(value_copy.__dict__)
                         raise Exception(
                             "Server op does not converge from (" 
                             + str(cur_server_state) + ", "
@@ -248,7 +250,7 @@ class ClientNode:
                     done = True
 
             cur_local_state += 1
-        print "Verified all xform pairs"
+        clog.info("Verified all xform pairs")
             
 
     def dump_csv(self):

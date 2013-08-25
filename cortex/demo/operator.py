@@ -1,3 +1,4 @@
+from .. import logging as clog
 
 class Operator:
     """Translates structed operations into cortex local op calls
@@ -19,7 +20,7 @@ class Operator:
         elif obj_type == "move":
             self._on_move(obj)
         else:
-            print "unknwon operation: ", obj
+            clog.err("unknwon operation: ", obj)
 
     def _get_node(self, tree_idx):
         cur_node = self._value

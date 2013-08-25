@@ -4,6 +4,7 @@ from server_node import ServerNode
 from remote import Remote
 from state import State
 from .. import CortexNode
+from ... import logging as clog
 
 class Server:
     """The main state representation of the Central OPt server
@@ -88,8 +89,8 @@ class Server:
                                remote_id=new_remote_id)
             
         def handle_remote_closed():
-            print "removing " + str(new_remote_id) + " from:"
-            print self.remotes
+            clog.info("removing " + str(new_remote_id) + " from:")
+            clog.info(self.remotes)
             self.remotes.pop(new_remote_id)
 
         new_remote = Remote(

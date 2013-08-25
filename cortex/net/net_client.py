@@ -3,6 +3,7 @@ import asyncore, socket, json
 from ..algo import operation, Initializer, Ack, Change
 from ..algo.client import Client
 from ...util import ConcurrentBuffer
+from .. import logging as clog
 
 class CortexClient(asyncore.dispatcher):
     def __init__(self, host, port):
@@ -24,6 +25,12 @@ class CortexClient(asyncore.dispatcher):
         else:
             self._initialized_callbacks.append(cb)
 
+    def hold_local_lock(self):
+        self._local_lock = True
+    def release_local_lock(self):
+        self._local_lock = False
+        self._operation_buffer.resolve_events()
+
     def _alert_new_operations(self):
         if self._local_lock:
             return
@@ -33,7 +40,7 @@ class CortexClient(asyncore.dispatcher):
         """Overrides asyncore.dispatcher"""
         data = self.recv(8192)
         if not data:
-            print "got a read with no data....?"
+            clog.err("got a read with no data....?")
             return
         obj = json.loads(data)
         obj_type = obj["type"]
@@ -50,10 +57,10 @@ class CortexClient(asyncore.dispatcher):
         elif obj_type == "server_initializer":
             self._on_server_initializer(obj)
         else:
-            print "unknwon message recieved: " + data
+            clog.err("unknwon message recieved: " + data)
 
     def _on_server_initializer(self, obj):
-        print "got init:", obj["initializer"]
+        clog.info("got init:", obj["initializer"])
         self._cortex_client = Client(
             self._on_client_change,
             Initializer.from_dict(obj["initializer"]))
@@ -63,10 +70,10 @@ class CortexClient(asyncore.dispatcher):
         self._initialized_callbacks = None
 
     def _on_server_change(self, obj):
-        print "applying change: " + data
+        clog.info("applying change: ", obj)
         self._cortex_client.apply_server_change(
             Change.from_dict(obj["change"]))
-        print "new tree: ", self._cortex_client.value.to_dict()
+        clog.info("new tree: ", self._cortex_client.value.to_dict())
 
     def _on_server_ack(self, obj):
         self._cortex_client.apply_server_ack(Ack.from_dict(obj["ack"]))

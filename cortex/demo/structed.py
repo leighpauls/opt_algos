@@ -3,6 +3,7 @@ import sys, asyncore, json
 from ..algo import client
 from ..algo.operation import Insert, Delete, Create, Remove, Move
 from ..net import CortexClient
+from .. import logging as clog
 
 from operator import Operator
 
@@ -37,7 +38,7 @@ class Structed(asyncore.file_dispatcher):
             obj = None
 
         if obj is None:
-            print "invalid read: ", data
+            clog.err("invalid read: ", data)
             self._output_tree()
             return
 
@@ -47,14 +48,11 @@ class Structed(asyncore.file_dispatcher):
         elif obj_type == "release_local_lock":
             self._on_release_lock()
         else:
-            print "before change:"
-            self._output_tree()
-            print "..."
             self._operator.handle_operation(obj)
             
     def _on_local_lock(self):
         self._net_client.hold_local_lock()
-    def _on_local_lock(self):
+    def _on_release_lock(self):
         self._net_client.release_local_lock()
     
         
@@ -79,7 +77,7 @@ class Structed(asyncore.file_dispatcher):
         self._output_tree()
 
     def _output_tree(self):
-        print self._cortex_client.value.to_dict()
+        sys.stdout.write(str(self._cortex_client.value.to_dict()) + '\n')
 
 
 def main():
