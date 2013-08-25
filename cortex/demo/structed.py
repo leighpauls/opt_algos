@@ -77,7 +77,7 @@ class Structed(asyncore.file_dispatcher):
         self._output_tree()
 
     def _output_tree(self):
-        sys.stdout.write(str(self._cortex_client.value.to_dict()) + '\n')
+        sys.stdout.write(json.dumps(self._cortex_client.value.to_dict()) + '\n')
 
 
 def main():
