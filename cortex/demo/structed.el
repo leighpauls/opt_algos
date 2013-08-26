@@ -45,7 +45,7 @@
 
 (defun structed-draw-on-output-filter (process output)
   "Accepts the stdout of the structed python client process"
-  (message "structed got: %s" output)
+  ;; (message "structed got: %s" output)
   (let ((buf (structed-find-buffer)))
     (if buf
         (with-current-buffer buf
@@ -92,20 +92,9 @@
       (structed-draw-layer 1 json-tree))
     (goto-char (min old-point (point-max)))))
 
-(defun structed-append-root-node ()
-  "Dummy function to append a child to the root node"
-  (interactive)
-  (process-send-string 
-   structed-client-buffer-name
-   (concat
-    (json-encode '(:type "append" :tree_index []))
-    "\n")))
-
 (defun structed-get-line-depth (line)
   "Get how deep this line is"
-  (let ((res (- (/ (string-match "\\\"" line) 2) 1)))
-    (message "line: %s, val: %s" line res)
-    res))
+  (- (/ (string-match "\\\"" line) 2) 1))
 
 (defun remove-empties (strings)
   (let ((res (list)))
@@ -113,7 +102,6 @@
       (unless (= 0 (length str))
         (setq res (append res (list str)))))
     res))
-    
 
 (defun structed-get-current-tree-index ()
   "Return the current index of the pointer"
@@ -123,7 +111,8 @@
     (structed-do-get-line-depth
      (remove-empties (split-string (buffer-substring
                                     (point-min)
-                                    (point)) "\n")))))
+                                    (point))
+                                   "\n")))))
 
 (defun structed-do-get-line-depth (preceding-lines)
   (let ((tree-index (list)))
@@ -144,3 +133,24 @@
           (setq tree-index (cdr tree-index))
           (setq tree-index (append (list (+ 1 (car tree-index)))
                                    (cdr tree-index)))))))))
+
+(defun structed-send-command (command-struct)
+  "Send command struct (json-encodable) to the python runtime"
+  (process-send-string 
+   structed-client-buffer-name
+   (concat (json-encode command-struct) "\n")))
+
+(defun structed-append-root-node ()
+  "Dummy function to append a child to the root node"
+  (interactive)
+  (structed-send-command '(:type "append" :tree_index [])))
+
+(defun list-to-vector (src-list)
+  (eval (append (list 'vector) src-list)))
+
+(defun structed-append-current-node ()
+  "Append a child to the currently selected node"
+  (interactive)
+  (structed-send-command 
+   `((type . append)
+     (tree_index . ,(list-to-vector (structed-get-current-tree-index))))))
