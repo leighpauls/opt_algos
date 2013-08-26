@@ -4,7 +4,8 @@
 
 (defvar structed-mode-keymap
   (let ((map (make-keymap)))
-    ;; (define-key map "\C-j" 'newline-and-indent)
+    (define-key map "a" 'structed-append-current-node)
+    (define-key map "r" 'structed-remove-current-node)
     map)
   "Keymap for the Structed Major Mode")
 
@@ -46,6 +47,10 @@
 (defun structed-draw-on-output-filter (process output)
   "Accepts the stdout of the structed python client process"
   ;; (message "structed got: %s" output)
+  (with-current-buffer structed-client-buffer-name
+    (save-excursion
+      (goto-char (point-max))
+      (insert output)))
   (let ((buf (structed-find-buffer)))
     (if buf
         (with-current-buffer buf
@@ -154,3 +159,16 @@
   (structed-send-command 
    `((type . append)
      (tree_index . ,(list-to-vector (structed-get-current-tree-index))))))
+
+(defun structed-remove-current-node ()
+  "Remove the currently selected node"
+  (interactive)
+  ;; TODO: prevent removing the root node
+  (let ((tree-index (list-to-vector (structed-get-current-tree-index))))
+    (if (= 0 (length tree-index))
+        (message "Can't delete the root of the tree!")
+      (structed-send-command
+       `((type . remove)
+         (tree_index . ,tree-index))))))
+
+

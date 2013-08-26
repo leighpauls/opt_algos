@@ -13,16 +13,12 @@ class Remove(Tree):
             self._index_list = index_list
 
     class Event(object):
-        def __init__(self, old_node, parent):
+        def __init__(self, old_node):
             self.OP_NAME = Remove.OP_NAME
             self._old_node = old_node
-            self._parent = parent
         @property
         def old_node(self):
             return self._old_node
-        @property
-        def parent(self):
-            return self._parent
 
     @property
     def index_list(self):
@@ -41,7 +37,7 @@ class Remove(Tree):
             remove_pairs.append(pair)
         for pair in remove_pairs:
             pair.parent.remove_child(pair.child)
-            
+            pair.parent.trigger_event(self.Event(pair.child))
 
     def _relocate_tree_index(self, old_index):
         # see if the node was removed, and find index changes

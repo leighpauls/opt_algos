@@ -20,9 +20,9 @@ class Create(Tree):
             return self._new_node
 
     def apply(self, value_root):
-        node = Tree._navigate_to_index_parent(self._index, value_root)
-        new_node = node.create_child(self._index[-1])
-        node.trigger_event(self.Event(new_node))
+        parent_node = Tree._navigate_to_index_parent(self._index, value_root)
+        new_node = parent_node.create_child(self._index[-1])
+        parent_node.trigger_event(self.Event(new_node))
 
     def _relocate_tree_index(self, old_index):
         res = old_index[:]
