@@ -2,12 +2,22 @@
 
 (defvar struced-mode-hook nil)
 
-(defvar structed-mode-keymap
+(defvar structed-is-editing nil)
+
+(defun structed-define-non-edit-key (map key function)
+  "Adds the key for non-editing scenarios"
+  (define-key map key `(lambda ()
+                         (interactive)
+                         (if structed-is-editing
+                             (insert key)
+                           (,function)))))
+
+(defun structed-mode-make-keymap ()
+  "Make the keymap for the Structed Major Mode"
   (let ((map (make-keymap)))
-    (define-key map "a" 'structed-append-current-node)
-    (define-key map "r" 'structed-remove-current-node)
-    map)
-  "Keymap for the Structed Major Mode")
+    (structed-define-non-edit-key map "a" 'structed-append-current-node)
+    (structed-define-non-edit-key map "r" 'structed-remove-current-node)
+    map))
 
 (defvar structed-buffer-name "*Structed*"
   "Buffer name to open structed instances in")
@@ -38,7 +48,7 @@
   "Initializer for structed mode"
   (kill-all-local-variables)
   (setq buffer-read-only t)
-  (use-local-map structed-mode-keymap)
+  (use-local-map (structed-mode-make-keymap))
   (setq major-mode 'structed-mode)
   (setq major-name "Structed")
   (run-hooks 'structed-mode-hook)
