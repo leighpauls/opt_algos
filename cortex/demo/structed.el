@@ -8,6 +8,8 @@
 
 ;; local vars
 (defvar structed-is-editing nil)
+(defvar structed-editing-tree-index nil)
+(defvar structed-cur-node-offset nil)
 
 (defun structed ()
   "Open a new structed buffer"
@@ -27,9 +29,9 @@
 (defun structed-mode-init ()
   "Initializer for structed mode"
   (kill-all-local-variables)
-  ;; (setq buffer-read-only t)
   (make-local-variable 'structed-is-editing)
-  ;; (make-local-variable 'inhibit-read-only)
+  (make-local-variable 'structed-editing-tree-index)
+  (make-local-variable 'structed-cur-node-offset)
   (add-text-properties (point-min) (point-max) 
                        '(read-only t))
   (setq inhibit-read-only '(structed-editing-block read-only))
@@ -38,8 +40,22 @@
   (setq major-name "Structed")
   (run-hooks 'structed-mode-hook)
   (structed-start-process)
-  (add-hook 'kill-buffer-query-functions 'structed-stop-process))
+  (add-hook 'kill-buffer-query-functions 'structed-stop-process)
+  (make-local-variable 'after-change-functions)
+  (add-hook 'after-change-functions 'structed-handle-after-change))
 
+(defun structed-handle-after-change (begin end old-length)
+  "Handles insertions/deletions during edit mode"
+  (message "handle after change %s" structed-is-editing)
+  (when structed-is-editing
+    (when (not (= 0 old-length))
+      (structed-send-deletions structed-editing-tree-index
+                               (- begin structed-cur-node-offset)
+                               old-length))
+    (when (not (= begin end))
+      (structed-send-insertions structed-editing-tree-index
+                                (- begin structed-cur-node-offset)
+                                (buffer-substring begin end)))))
 
 (defun structed-define-non-edit-key (map key function)
   "Adds the key for non-editing scenarios"
@@ -73,13 +89,14 @@
     (save-excursion
       (goto-char (point-max))
       (insert output)))
-  (let ((buf (structed-find-buffer)))
-    (if buf
-        (with-current-buffer buf
-          (structed-draw-tree output))
-      (progn
-        (message "Couldn't find Structed Buffer")
-        (kill-process process)))))
+  (unless structed-is-editing
+    (let ((buf (structed-find-buffer)))
+      (if buf
+          (with-current-buffer buf
+            (structed-draw-tree output))
+        (progn
+          (message "Couldn't find Structed Buffer")
+          (kill-process process))))))
 
 (defun structed-start-process ()
   "Starts the background python process"
@@ -200,6 +217,26 @@
        `((type . remove)
          (tree_index . ,tree-index))))))
 
+(defun structed-send-deletions (tree-index begin count)
+  "Send delete commands to the python process"
+  (message "Remove at %s: %d x %d" tree-index begin count)
+  (dotimes (i count)
+    (structed-send-command
+     `((type . delete)
+       (tree_index . ,tree-index)
+       (linear_index . ,begin)))))
+
+(defun structed-send-insertions (tree-index begin chars)
+  "Send insert commands to the python process"
+  (message "Insert at %s:%d - %s" tree-index begin chars)
+  (let ((cursor-pos begin))
+    (dolist (ch (remove-empties (split-string chars "")))
+      (structed-send-command
+       `((type . insert)
+         (tree_index . ,tree-index)
+         (linear_index . ,cursor-pos)
+         (value . ,ch)))
+      (setq cursor-pos (+ 1 cursor-pos)))))
 
 (defun structed-hold-local-lock ()
   (structed-send-command '((type . hold_local_lock))))
@@ -209,25 +246,24 @@
 (defun structed-edit-current-node ()
   "Put the current node into edit mode"
   (interactive)
-  (let ((tree-index (structed-get-current-tree-index)))
-    (setq structed-is-editing t)
-    (structed-hold-local-lock)
-    (structed-set-editing-block tree-index)
-    ;; TODO: color the text
-    ))
+  (structed-hold-local-lock)
+  (structed-set-editing-block))
 
-(defun structed-set-editing-block (tree-index)
+(defun structed-set-editing-block ()
   "Set the node's costraints for editing, and move point there, assumes point is on the line"
-  (search-backward-regexp "^\\|\\n")
-  (search-forward "\"")
-  (let ((quote-block-start (- (point) 1)))
-    (search-forward "\"\n")
-    (let ((quote-block-end (- (point) 1))
-          (inhibit-read-only t))
-      (message "Add text property from %d to %d" quote-block-start quote-block-end)
-      (add-text-properties quote-block-start quote-block-end 
-                           '(face highlight))
-      (add-text-properties quote-block-start (- quote-block-end 1)
-                           '(read-only structed-editing-block))
-      (goto-char (+ 1 quote-block-start)))))
+  (let ((tree-index (structed-get-current-tree-index)))
+    (search-backward-regexp "^\\|\\n")
+    (search-forward "\"")
+    (let ((quote-block-start (- (point) 1)))
+      (search-forward "\"\n")
+      (let ((quote-block-end (- (point) 1))
+            (inhibit-read-only t))
+        (add-text-properties quote-block-start quote-block-end 
+                             '(face highlight))
+        (add-text-properties quote-block-start (- quote-block-end 1)
+                             '(read-only structed-editing-block))
+        (goto-char (+ 1 quote-block-start))
+        (setq structed-editing-tree-index tree-index)
+        (setq structed-cur-node-offset (+ 1 quote-block-start))
+        (setq structed-is-editing t)))))
 
