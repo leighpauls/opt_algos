@@ -1,7 +1,7 @@
 (require 'json)
 
 ;; global vars
-(defvar struced-mode-hook nil)
+(defvar structed-mode-hook nil)
 (defvar structed-buffer-name "*Structed*"
   "Buffer name to open structed instances in")
 (defvar structed-client-buffer-name "*structed-client*")
@@ -10,6 +10,7 @@
 (defvar structed-is-editing nil)
 (defvar structed-editing-tree-index nil)
 (defvar structed-cur-node-offset nil)
+(defvar structed-is-exiting-edit-mode nil)
 
 (defun structed ()
   "Open a new structed buffer"
@@ -32,6 +33,7 @@
   (make-local-variable 'structed-is-editing)
   (make-local-variable 'structed-editing-tree-index)
   (make-local-variable 'structed-cur-node-offset)
+  (make-local-variable 'structed-is-exiting-edit-mode)
   (add-text-properties (point-min) (point-max) 
                        '(read-only t))
   (setq inhibit-read-only '(structed-editing-block read-only))
@@ -44,15 +46,32 @@
   (make-local-variable 'after-change-functions)
   (add-hook 'after-change-functions 'structed-handle-after-change))
 
+(defun structed-get-editing-block-properties ()
+  "The text properties for the editing block"
+  '(point-left structed-stop-editing-block
+               point-entered structed-stop-editing-block
+               face highlight))
+
 (defun structed-handle-after-change (begin end old-length)
   "Handles insertions/deletions during edit mode"
   (message "handle after change %s" structed-is-editing)
   (when structed-is-editing
     (when (not (= 0 old-length))
+      (when (= -1 (- begin structed-cur-node-offset)) ; Filter out deletions of the leading quote
+        (message "deleted quote")
+        (save-excursion (let ((inhibit-read-only t))
+                          (goto-char begin)
+                          (insert "\"")
+                          (add-text-properties
+                           begin (+ 1 begin)
+                           (structed-get-editing-block-properties))))
+        (setq begin (+ 1 begin))
+        (setq old-length (- old-length 1)))
       (structed-send-deletions structed-editing-tree-index
                                (- begin structed-cur-node-offset)
                                old-length))
     (when (not (= begin end))
+      (add-text-properties begin end (structed-get-editing-block-properties))
       (structed-send-insertions structed-editing-tree-index
                                 (- begin structed-cur-node-offset)
                                 (buffer-substring begin end)))))
@@ -81,6 +100,7 @@
           (and (eq major-mode 'structed-mode)
                (equal structed-buffer-name (buffer-name))))
         (return buf))))
+
 
 (defun structed-draw-on-output-filter (process output)
   "Accepts the stdout of the structed python client process"
@@ -111,7 +131,9 @@
 
 (defun structed-stop-process () 
   "Stops the background python process"
-  (kill-buffer structed-client-buffer-name))
+  (when (get-buffer structed-client-buffer-name)
+    (kill-buffer structed-client-buffer-name))
+  t)
 
 (defun structed-draw-layer (num-dots json-tree)
   "Draw the subtree recursively"
@@ -249,6 +271,15 @@
   (structed-hold-local-lock)
   (structed-set-editing-block))
 
+(defun structed-stop-editing-block (old-point new-point)
+  "Called when the point moves out of the active editing block"
+  (when (and structed-is-editing (not structed-is-exiting-edit-mode))
+    (setq structed-is-exiting-edit-mode t)
+    (message "moved out of block")
+    (structed-unset-editing-block)
+    (structed-release-local-lock)
+    (setq structed-is-exiting-edit-mode nil)))
+
 (defun structed-set-editing-block ()
   "Set the node's costraints for editing, and move point there, assumes point is on the line"
   (let ((tree-index (structed-get-current-tree-index)))
@@ -258,12 +289,38 @@
       (search-forward "\"\n")
       (let ((quote-block-end (- (point) 1))
             (inhibit-read-only t))
-        (add-text-properties quote-block-start quote-block-end 
-                             '(face highlight))
-        (add-text-properties quote-block-start (- quote-block-end 1)
-                             '(read-only structed-editing-block))
         (goto-char (+ 1 quote-block-start))
+        (add-text-properties
+         quote-block-start
+         (- quote-block-end 1) 
+         '(read-only structed-editing-block))
+        (add-text-properties 
+         quote-block-start
+         quote-block-end
+         (structed-get-editing-block-properties))
         (setq structed-editing-tree-index tree-index)
         (setq structed-cur-node-offset (+ 1 quote-block-start))
         (setq structed-is-editing t)))))
 
+(defun structed-unset-editing-block ()
+  "Remove the visual styling used on the active editing block"
+  (if (not structed-is-editing)
+    (progn
+      (message "Error: called structed-unset-editing-block when not in edit mode")
+      (debug))
+    (progn
+      (setq structed-is-editing nil)
+      (save-excursion
+        (goto-char structed-cur-node-offset)
+        (search-forward "\"\n")
+        (let ((quote-block-start (- structed-cur-node-offset 1))
+              (quote-block-end (- (point) 1))
+              (inhibit-read-only t))
+          (add-text-properties 
+           quote-block-start
+           (- quote-block-end 1)
+           '(read-only t))
+          (remove-text-properties
+           quote-block-start
+           quote-block-end
+           (structed-get-editing-block-properties)))))))
