@@ -1,5 +1,5 @@
 ;; local vars
-(defvar structed-is-editing nil)
+(defvar structed-is-editing nil "local variable, t if structed is in an editing state")
 (defvar structed-editing-tree-index nil)
 (defvar structed-cur-node-offset nil)
 (defvar structed-is-exiting-edit-mode nil)

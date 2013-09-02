@@ -54,7 +54,7 @@ class Structed(asyncore.file_dispatcher):
         self._net_client.hold_local_lock()
     def _on_release_lock(self):
         self._net_client.release_local_lock()
-    
+        self._output_tree()
         
     def _bind_handlers_recursive(self, value):
         """ for the initial binding of handlers to the tree"""

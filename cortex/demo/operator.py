@@ -40,7 +40,12 @@ class Operator:
     def _on_remove(self, obj):
         self._get_node(obj["tree_index"]).local_op_remove()
     def _on_move(self, obj):
-        dest_idx = obj["dest_tree_index"]
-        new_parent = self._get_node(dest_idx[:-1])
+        dest_node = self._get_node(obj["dest_tree_index"])
         src_node = self._get_node(obj["src_tree_index"])
-        src_node.local_op_move_to(new_parent, dest_idx[-1])
+        move_type = obj["move_type"]
+        if move_type == "after":
+            src_node.local_op_move_after(dest_node)
+        elif move_type == "before":
+            src_node.local_op_move_before(dest_node)
+        else:
+            clog.err("Unknown move_type: ", obj)

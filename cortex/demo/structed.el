@@ -1,3 +1,7 @@
+;;
+;; I realize how this front end misses the point of Cortex, but I haven't ported it over to elisp yet.
+;;
+
 (require 'json)
 
 ;; global vars
@@ -12,7 +16,8 @@
                 relative-path)))
 
 (structed-load-relative "./structed_keymap.el")
-(structed-load-relative "./structed_edit")
+(structed-load-relative "./structed_edit.el")
+(structed-load-relative "./structed_move.el")
 
 (defun structed ()
   "Open a new structed buffer"
@@ -38,9 +43,10 @@
   (setq major-mode 'structed-mode)
   (setq major-name "Structed")
   (run-hooks 'structed-mode-hook)
-  (structed-mode-init-edit)
   (structed-start-process)
-  (add-hook 'kill-buffer-query-functions 'structed-stop-process))
+  (add-hook 'kill-buffer-query-functions 'structed-stop-process)
+  (structed-mode-init-edit)
+  (structed-mode-init-move))
 
 (defun structed-find-buffer ()
   "Look for an existing structed buffer and return it, else nil"
@@ -57,7 +63,7 @@
     (save-excursion
       (goto-char (point-max))
       (insert output)))
-  (unless structed-is-editing
+  (unless (or structed-is-editing structed-is-moving)
     (let ((buf (structed-find-buffer)))
       (if buf
           (with-current-buffer buf
