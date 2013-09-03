@@ -14,10 +14,13 @@
   (make-local-variable 'after-change-functions)
   (add-hook 'after-change-functions 'structed-handle-after-change))
 
+(defun structed-point-entered-cb (old-point new-point)
+  (structed-stop-editing-block))
+
 (defun structed-get-editing-block-properties ()
   "The text properties for the editing block"
-  '(point-left structed-stop-editing-block
-               point-entered structed-stop-editing-block
+  '(point-left structed-point-entered-cb
+               point-entered structed-point-entered-cb
                face highlight))
 
 (defun structed-handle-after-change (begin end old-length)
@@ -50,7 +53,7 @@
   (dotimes (i count)
     (structed-send-command
      `((type . delete)
-       (tree_index . ,tree-index)
+       (tree_index . ,(reverse-vector tree-index))
        (linear_index . ,begin)))))
 
 (defun structed-send-insertions (tree-index begin chars)
@@ -60,7 +63,7 @@
     (dolist (ch (remove-empties (split-string chars "")))
       (structed-send-command
        `((type . insert)
-         (tree_index . ,tree-index)
+         (tree_index . ,(reverse-vector tree-index))
          (linear_index . ,cursor-pos)
          (value . ,ch)))
       (setq cursor-pos (+ 1 cursor-pos)))))
@@ -71,7 +74,7 @@
   (structed-hold-local-lock)
   (structed-set-editing-block))
 
-(defun structed-stop-editing-block (old-point new-point)
+(defun structed-stop-editing-block ()
   "Called when the point moves out of the active editing block"
   (when (and structed-is-editing (not structed-is-exiting-edit-mode))
     (setq structed-is-exiting-edit-mode t)

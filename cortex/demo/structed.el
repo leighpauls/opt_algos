@@ -5,7 +5,6 @@
 (require 'json)
 
 ;; global vars
-(defvar structed-mode-hook nil)
 (defvar structed-buffer-name "*Structed*"
   "Buffer name to open structed instances in")
 (defvar structed-client-buffer-name "*structed-client*")
@@ -26,10 +25,22 @@
     (if existing-buffer
         (pop-to-buffer existing-buffer)
       (progn (pop-to-buffer (generate-new-buffer structed-buffer-name))
-             (structed-mode-init)))))
+             (structed-mode)))))
 
 (defun structed-mode ()
-  "Major Mode for using Structed"
+  "
+Major Mode for using Structed
+Basic commands:
+ (e)dit the value of the node at point
+ (r)emove the node at point
+ (a)ppend a new node as a child of the node at point
+ (m)ove the node at point
+
+While moving a node, use the commands:
+ (a)fter - make the source node a sister node after the node at point
+ (b)efore - make the source node a sister node before the node at point
+ (q)uit - stop trying to move the node
+"
   (interactive)
   (structed-mode-init))
 
@@ -42,9 +53,13 @@
   (use-local-map (structed-mode-make-keymap))
   (setq major-mode 'structed-mode)
   (setq major-name "Structed")
-  (run-hooks 'structed-mode-hook)
   (structed-start-process)
+  (make-local-variable 'kill-buffer-query-functions)
   (add-hook 'kill-buffer-query-functions 'structed-stop-process)
+  (add-hook 'kill-buffer-query-functions 
+            '(lambda ()
+               (structed-stop-editing-block)
+               t))
   (structed-mode-init-edit)
   (structed-mode-init-move))
 
@@ -80,8 +95,7 @@
                        "python"
                        "/Users/leighpauls/structed_client.py"
                        "2>/dev/null")
-                      'structed-draw-on-output-filter)
-  (make-local-variable 'kill-buffer-query-functions))
+                      'structed-draw-on-output-filter))
 
 (defun structed-stop-process () 
   "Stops the background python process"
@@ -164,37 +178,39 @@
           (setq tree-index (append (list (+ 1 (car tree-index)))
                                    (cdr tree-index)))))))))
 
+(defun reverse-vector (orig-vector)
+  "Return the vector in reverse order"
+  (vconcat (reverse (append orig-vector nil))))
+
 (defun structed-send-command (command-struct)
   "Send command struct (json-encodable) to the python runtime"
   (process-send-string 
    structed-client-buffer-name
    (concat (json-encode command-struct) "\n")))
 
-(defun structed-append-root-node ()
-  "Dummy function to append a child to the root node"
-  (interactive)
-  (structed-send-command '(:type "append" :tree_index [])))
-
-
 (defun structed-append-current-node ()
   "Append a child to the currently selected node"
   (interactive)
   (structed-send-command 
    `((type . append)
-     (tree_index . ,(structed-get-current-tree-index)))))
+     (tree_index . ,(reverse-vector (structed-get-current-tree-index))))))
 
 (defun structed-remove-current-node ()
   "Remove the currently selected node"
   (interactive)
   (let ((tree-index (structed-get-current-tree-index)))
+    (message "trying to remove %s" tree-index)
     (if (= 0 (length tree-index))
         (message "Can't delete the root of the tree!")
       (structed-send-command
        `((type . remove)
-         (tree_index . ,tree-index))))))
+         (tree_index . ,(reverse-vector tree-index)))))))
 
 (defun structed-hold-local-lock ()
   (structed-send-command '((type . hold_local_lock))))
 (defun structed-release-local-lock ()
   (structed-send-command '((type . release_local_lock))))
 
+(defun structed-show-cur-pos ()
+  (interactive)
+  (message "Point at: %s" (reverse-vector (structed-get-current-tree-index))))

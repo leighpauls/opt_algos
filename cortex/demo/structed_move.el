@@ -62,8 +62,8 @@
    (t
     (structed-send-command
      `((type . move)
-       (src_tree_index . ,src-index)
-       (dest_tree_index . ,dest-index)
+       (src_tree_index . ,(reverse-vector src-index))
+       (dest_tree_index . ,(reverse-vector dest-index))
        (move_type . ,move-type))))))
 
 (defun structed-mode-move-quit ()

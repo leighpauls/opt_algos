@@ -23,5 +23,6 @@
     (structed-define-non-edit-move-key map "m" 'structed-move-current-node nil)
     (structed-define-non-edit-move-key map "b" nil 'structed-mode-move-insert-before)
     (structed-define-non-edit-move-key map "q" nil 'structed-mode-move-quit)
+    (structed-define-non-edit-move-key map "p" 'structed-show-cur-pos nil)
     (define-key map (kbd "C-m") 'next-line)
     map))
