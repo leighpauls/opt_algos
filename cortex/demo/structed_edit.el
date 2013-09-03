@@ -25,11 +25,9 @@
 
 (defun structed-handle-after-change (begin end old-length)
   "Handles insertions/deletions during edit mode"
-  (message "handle after change %s" structed-is-editing)
   (when structed-is-editing
     (when (not (= 0 old-length))
       (when (= -1 (- begin structed-cur-node-offset)) ; Filter out deletions of the leading quote
-        (message "deleted quote")
         (save-excursion (let ((inhibit-read-only t))
                           (goto-char begin)
                           (insert "\"")
@@ -49,7 +47,6 @@
 
 (defun structed-send-deletions (tree-index begin count)
   "Send delete commands to the python process"
-  (message "Remove at %s: %d x %d" tree-index begin count)
   (dotimes (i count)
     (structed-send-command
      `((type . delete)
@@ -58,7 +55,6 @@
 
 (defun structed-send-insertions (tree-index begin chars)
   "Send insert commands to the python process"
-  (message "Insert at %s:%d - %s" tree-index begin chars)
   (let ((cursor-pos begin))
     (dolist (ch (remove-empties (split-string chars "")))
       (structed-send-command
@@ -78,7 +74,6 @@
   "Called when the point moves out of the active editing block"
   (when (and structed-is-editing (not structed-is-exiting-edit-mode))
     (setq structed-is-exiting-edit-mode t)
-    (message "moved out of block")
     (structed-unset-editing-block)
     (structed-release-local-lock)
     (setq structed-is-exiting-edit-mode nil)))

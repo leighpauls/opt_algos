@@ -73,7 +73,6 @@ While moving a node, use the commands:
 
 (defun structed-draw-on-output-filter (process output)
   "Accepts the stdout of the structed python client process"
-  ;; (message "structed got: %s" output)
   (with-current-buffer structed-client-buffer-name
     (save-excursion
       (goto-char (point-max))
@@ -199,7 +198,6 @@ While moving a node, use the commands:
   "Remove the currently selected node"
   (interactive)
   (let ((tree-index (structed-get-current-tree-index)))
-    (message "trying to remove %s" tree-index)
     (if (= 0 (length tree-index))
         (message "Can't delete the root of the tree!")
       (structed-send-command
