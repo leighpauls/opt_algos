@@ -1,3 +1,8 @@
+This project was developed mainly as a publishable proof-of-concept experiment on Operational Transform applied to structured data. That experiment was a success!
+
+I'm currently working on a clean version of this concept that will acutally be usable in production. I'm calling it CortexJ for the moment (written in Java, of course).
+I definitely won't release any of it until it's actually usable, and I'm not sure about if I want open source the whole thing, or just the client, or just particular interface implementations to the client.
+
 * OPT_ALGOS - Operational Transform Algorithms
 
 This project is a set of operational transform (OT) algorithm implementations.
